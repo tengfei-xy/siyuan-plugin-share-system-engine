@@ -112,8 +112,8 @@ func shareRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("请求链接")
 	log.Infof("IP: %s", c.ClientIP())
-	log.Infof("地址: %s", c.Request.URL.String())
-	log.Infof("参数:%s", param)
+	log.Infof("链接: %s", c.Request.URL.String())
+	log.Infof("参数: %s", param)
 	var res resStruct
 	row := app.db.QueryRow(`select appid,docid,status from share where link=?`, param)
 	var appid, docid string
@@ -143,11 +143,12 @@ func shareRequest(c *gin.Context) {
 	//
 	new_url := fmt.Sprintf("%s/%s/%s/index.html", app.Basic.ShareBaseLink, appid, docid)
 	//重定向
-	log.Infof("重定向:%s", new_url)
+	log.Infof("重定向: %s", new_url)
 	c.Redirect(http.StatusMovedPermanently, new_url)
 }
 func uploadFileRequest(c *gin.Context) {
 	log.Info("-----------------")
+	log.Info("上传文件")
 	log.Infof("IP:%s", c.ClientIP())
 	var res resStruct
 	appid := c.Query("appid")
@@ -183,7 +184,7 @@ func uploadFileRequest(c *gin.Context) {
 	}
 
 	// 复制原始文件到资源文件夹中
-	dst_zip_file := filepath.Join(f, tmp_zip_file)
+	dst_zip_file := filepath.Join(f, "resources.zip")
 	if _, err := tool.FileCopy(dst_zip_file, tmp_zip_file); err != nil {
 		log.Error(err)
 		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
@@ -192,8 +193,7 @@ func uploadFileRequest(c *gin.Context) {
 
 	// 解压文件
 	log.Infof("解压文件 文件名:%s", dst_zip_file)
-	if err := UnZip(f, dst_zip_file); err != nil {
-		log.Error(err)
+	if err := unzip(f, dst_zip_file); err != nil {
 		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
 		return
 	}
@@ -209,6 +209,7 @@ func uploadFileRequest(c *gin.Context) {
 }
 func uploadArgsRequest(c *gin.Context) {
 	log.Info("-----------------")
+	log.Info("上传参数")
 	log.Infof("IP:%s", c.ClientIP())
 
 	var res resStruct
@@ -226,6 +227,12 @@ func uploadArgsRequest(c *gin.Context) {
 		c.String(http.StatusInternalServerError, res.setErrJson().toString())
 		return
 	}
+
+	log.Infof("appid: %s", data.Appid)
+	log.Infof("docid: %s", data.Docid)
+	log.Infof("theme: %s", data.Theme)
+	log.Infof("version: %s", data.Version)
+	log.Infof("title: %s", data.Title)
 
 	// 创建资源文件夹，
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
@@ -258,7 +265,6 @@ func uploadArgsRequest(c *gin.Context) {
 
 	link := createRand()
 	// 处理请求
-	// insert into share(appid,docid,content,theme,version,link) values('1','1','1','1','1','1') on duplicate key update appid='1',docid='1'
 	var result sql.Result
 	result, err = app.db.Exec("INSERT INTO share(appid,docid,title,link) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE `title` = VALUES(`title`),`link` = VALUES(`link`) ", data.Appid, data.Docid, data.Title, link)
 	if err != nil {
@@ -267,22 +273,34 @@ func uploadArgsRequest(c *gin.Context) {
 		return
 	}
 	n, _ := result.RowsAffected()
+	old_link := false
 	if n == 0 {
 		// 处理请求
 		row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
 
 		if err := row.Scan(&link); err != nil {
+			log.Error(err)
 			c.String(http.StatusInternalServerError, res.setErrSystem().toString())
 			return
+		} else {
+			old_link = true
 		}
 
 		c.String(http.StatusInternalServerError, res.toString())
 		return
 	}
-	log.Infof("上传参数 appid:%s docid:%s version:%s link:%s title:%s", data.Appid, data.Docid, data.Version, link, data.Title)
 
+	full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
+
+	log.Infof("link: %s", link)
+	log.Infof("flink: %s", full_link)
+	if old_link {
+		log.Infof("上传参数成功")
+	} else {
+		log.Infof("提取参数成功")
+	}
 	// 返回数据
-	c.String(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)).toString())
+	c.String(http.StatusOK, res.setOK(full_link).toString())
 }
 func getLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
