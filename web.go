@@ -218,15 +218,15 @@ func uploadFileRequest(c *gin.Context) {
 		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
 		return
 	}
+	update_theme_file(f)
 	c.String(http.StatusOK, res.setOK("上传文件成功").toString())
 	return
 }
 func uploadArgsRequest(c *gin.Context) {
 	log.Info("-----------------")
+	log.Infof("IP: %s", c.ClientIP())
 	log.Info("上传参数")
 	log.Infof("链接: %s", c.Request.URL.String())
-
-	log.Infof("IP: %s", c.ClientIP())
 
 	var res resStruct
 

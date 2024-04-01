@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
-	"github.com/tengfei-xy/go-log"
+	log "github.com/tengfei-xy/go-log"
+	"github.com/tengfei-xy/go-tools"
 )
 
 func unzip(dst, src string) (err error) {
@@ -65,6 +67,22 @@ func unzip(dst, src string) (err error) {
 		// 可以把它单独放在一个函数中，这里是个实验，就这样了
 		fw.Close()
 		fr.Close()
+	}
+	return nil
+}
+func update_theme_file(f string) error {
+	filename := filepath.Join(f, "appearance/themes/Odyssey/theme.css")
+	if tools.FileExist(filename) {
+		log.Info("发现主题 Odyssey")
+		content, err := os.ReadFile(filename)
+		if err != nil {
+			log.Error(err)
+			return nil
+		}
+		s := string(content)
+		s = strings.ReplaceAll(s, "/appearance/themes/Odyssey/", "")
+		os.WriteFile(filename, []byte(s), 0644)
+		log.Info("修改主题 Odyssey")
 	}
 	return nil
 }
