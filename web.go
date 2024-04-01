@@ -120,6 +120,10 @@ func shareRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 	log.Infof("参数: %s", param)
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	var res resStruct
 	row := app.db.QueryRow(`select appid,docid,status from share where link=?`, param)
 	var appid, docid string
@@ -129,7 +133,7 @@ func shareRequest(c *gin.Context) {
 			c.String(http.StatusNotFound, res.setNoShare().toMsg())
 			return
 		} else {
-			c.String(http.StatusInternalServerError, res.setErrSystem().toMsg())
+			c.String(http.StatusOK, res.setErrSystem().toMsg())
 			return
 		}
 	}
@@ -142,7 +146,7 @@ func shareRequest(c *gin.Context) {
 	_, err := app.db.Exec(`update share set count=count+1 where link=?`, param)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -157,13 +161,16 @@ func uploadFileRequest(c *gin.Context) {
 	log.Info("上传文件")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	var res resStruct
 	appid := c.Query("appid")
 	docid := c.Query("docid")
 
 	if len(appid) == 0 || len(docid) == 0 {
-		c.String(http.StatusForbidden, res.setErrParam().toString())
+		c.String(http.StatusOK, res.setErrParam().toString())
 		return
 
 	}
@@ -174,7 +181,7 @@ func uploadFileRequest(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -185,7 +192,7 @@ func uploadFileRequest(c *gin.Context) {
 	err = c.SaveUploadedFile(file, tmp_zip_file)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -193,7 +200,7 @@ func uploadFileRequest(c *gin.Context) {
 	f, err := mkdir_all(appid, docid)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -201,21 +208,21 @@ func uploadFileRequest(c *gin.Context) {
 	dst_zip_file := filepath.Join(f, "resources.zip")
 	if _, err := tool.FileCopy(dst_zip_file, tmp_zip_file); err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
 	// 解压文件
 	log.Infof("解压文件 文件名:%s", dst_zip_file)
 	if err := unzip(f, dst_zip_file); err != nil {
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	// 解压文件 结束
 	// 删除原始文件
 	if err := tools.FileRemove(tmp_zip_file); err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	update_theme_file(f)
@@ -229,18 +236,21 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("链接: %s", c.Request.URL.String())
 
 	var res resStruct
-
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	// 获取请求数据
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
 	// 解析请求数据
 	var data uploadArgsReq
 	if err := json.Unmarshal(b, &data); err != nil {
-		c.String(http.StatusInternalServerError, res.setErrJson().toString())
+		c.String(http.StatusOK, res.setErrJson().toString())
 		return
 	}
 
@@ -255,7 +265,7 @@ func uploadArgsRequest(c *gin.Context) {
 	tmp_html, err := mkdir_all(data.Appid, data.Docid)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -269,13 +279,13 @@ func uploadArgsRequest(c *gin.Context) {
 	f, err := os.Create(filepath.Join(tmp_html, "index.html"))
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	_, err = f.WriteString(content)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -285,7 +295,7 @@ func uploadArgsRequest(c *gin.Context) {
 	result, err = app.db.Exec("INSERT INTO share(appid,docid,title,link) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE `title` = VALUES(`title`),`link` = VALUES(`link`) ", data.Appid, data.Docid, data.Title, link)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	n, _ := result.RowsAffected()
@@ -296,13 +306,13 @@ func uploadArgsRequest(c *gin.Context) {
 
 		if err := row.Scan(&link); err != nil {
 			log.Error(err)
-			c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+			c.String(http.StatusOK, res.setErrSystem().toString())
 			return
 		} else {
 			old_link = true
 		}
 
-		c.String(http.StatusInternalServerError, res.toString())
+		c.String(http.StatusOK, res.toString())
 		return
 	}
 
@@ -324,7 +334,7 @@ func getLinkRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -335,7 +345,7 @@ func getLinkRequest(c *gin.Context) {
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Error(err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -343,7 +353,7 @@ func getLinkRequest(c *gin.Context) {
 	// 解析json数据
 	if err := json.Unmarshal(b, &data); err != nil {
 
-		c.String(http.StatusInternalServerError, res.setErrJson().toString())
+		c.String(http.StatusOK, res.setErrJson().toString())
 		return
 	}
 	log.Infof("appid: %s", data.Appid)
@@ -376,14 +386,17 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	var res resStruct
 	// 从body中读取数据
 	// 获取post请求的数据
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		log.Errorf("错误: %v", err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
@@ -391,7 +404,7 @@ func deleteLinkRequest(c *gin.Context) {
 	// 解析json数据
 	if err := json.Unmarshal(b, &data); err != nil {
 		log.Errorf("错误: %v", err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	log.Infof("appid: %s", data.Appid)
@@ -400,12 +413,12 @@ func deleteLinkRequest(c *gin.Context) {
 	_, err = app.db.Exec(`delete from share where appid=? and docid=?`, data.Appid, data.Docid)
 	if err != nil {
 		log.Errorf("错误: %v", err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	if err := rmdir_all(data.Appid, data.Docid); err != nil {
 		log.Errorf("错误: %v", err)
-		c.String(http.StatusInternalServerError, res.setErrSystem().toString())
+		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 	log.Info("删除链接成功")
