@@ -75,6 +75,12 @@ func (r *resStruct) setOK(str string) *resStruct {
 	r.Data = str
 	return r
 }
+func (r *resStruct) setErrParam() *resStruct {
+	r.Err = 4
+	r.Msg = "参数错误"
+	r.Data = ""
+	return r
+}
 
 // json to string
 func (r *resStruct) toString() string {
@@ -149,12 +155,20 @@ func shareRequest(c *gin.Context) {
 func uploadFileRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("上传文件")
-	log.Infof("IP:%s", c.ClientIP())
+	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("链接: %s", c.Request.URL.String())
+
 	var res resStruct
 	appid := c.Query("appid")
 	docid := c.Query("docid")
 
-	log.Infof("上传文件 appid:%s docid:%s", appid, docid)
+	if len(appid) == 0 || len(docid) == 0 {
+		c.String(http.StatusForbidden, res.setErrParam().toString())
+		return
+
+	}
+	log.Infof("appid: %s", appid)
+	log.Infof("docid: %s", docid)
 
 	// 读取文件
 	file, err := c.FormFile("file")
@@ -210,7 +224,9 @@ func uploadFileRequest(c *gin.Context) {
 func uploadArgsRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("上传参数")
-	log.Infof("IP:%s", c.ClientIP())
+	log.Infof("链接: %s", c.Request.URL.String())
+
+	log.Infof("IP: %s", c.ClientIP())
 
 	var res resStruct
 
@@ -306,6 +322,7 @@ func getLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("获取链接")
 	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("链接: %s", c.Request.URL.String())
 
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
@@ -358,6 +375,8 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("链接: %s", c.Request.URL.String())
+
 	var res resStruct
 	// 从body中读取数据
 	// 获取post请求的数据

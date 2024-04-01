@@ -5,10 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/tengfei-xy/go-log"
-	"github.com/tengfei-xy/go-tools"
 )
 
 func unzip(dst, src string) (err error) {
@@ -37,18 +35,6 @@ func unzip(dst, src string) (err error) {
 				return err
 			}
 			continue
-		} else {
-			// 前端的zip库有问题，用了诡异的解决方法
-			path := filepath.Join(dst, strings.ReplaceAll(file.Name, "\\", "/"))
-
-			b_path := filepath.Dir(path)
-			log.Infof("新路径: %s", b_path)
-			if !tools.FileExist(b_path) {
-				if err := os.MkdirAll(path, 0755); err != nil {
-					log.Error(err)
-					return err
-				}
-			}
 		}
 
 		// 获取到 Reader
