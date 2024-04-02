@@ -70,19 +70,27 @@ func unzip(dst, src string) (err error) {
 	}
 	return nil
 }
-func update_theme_file(f string) error {
+func check_theme_file(f string) error {
 	filename := filepath.Join(f, "appearance/themes/Odyssey/theme.css")
 	if tools.FileExist(filename) {
-		log.Info("发现主题 Odyssey")
-		content, err := os.ReadFile(filename)
-		if err != nil {
-			log.Error(err)
-			return nil
-		}
-		s := string(content)
-		s = strings.ReplaceAll(s, "/appearance/themes/Odyssey/", "")
-		os.WriteFile(filename, []byte(s), 0644)
-		log.Info("修改主题 Odyssey")
+		return update_theme_file(filename)
 	}
+	filename = filepath.Join(f, "appearance/themes/Savor/theme.css")
+	if tools.FileExist(filename) {
+		return update_theme_file(filename)
+	}
+	return nil
+}
+func update_theme_file(filename string) error {
+	log.Info("发现主题 Odyssey")
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	s := string(content)
+	s = strings.ReplaceAll(s, "/appearance/themes/Odyssey/", "")
+	os.WriteFile(filename, []byte(s), 0644)
+	log.Info("修改主题 Odyssey")
 	return nil
 }

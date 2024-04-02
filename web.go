@@ -225,7 +225,7 @@ func uploadFileRequest(c *gin.Context) {
 		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
-	update_theme_file(f)
+	check_theme_file(f)
 	c.String(http.StatusOK, res.setOK("上传文件成功").toString())
 	return
 }
