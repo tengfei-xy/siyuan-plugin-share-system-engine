@@ -24,6 +24,35 @@ type uploadArgsReq struct {
 	Version string `json:"version"`
 	Title   string `json:"title"`
 }
+type uploadHostReq struct {
+	Appid  string `json:"appid"`
+	Host   string `json:"host"`
+	Status bool   `json:"status"`
+}
+
+func (d *uploadHostReq) uploadTrue() error {
+	if !d.Status {
+		return nil
+	}
+	_, err := app.db.Exec("insert into host(appid,host) Values(?,?)  ON DUPLICATE KEY UPDATE `appid` = VALUES(`appid`),`host` = VALUES(`host`) ", d.Appid, d.Host)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+func (d *uploadHostReq) uploadFalse() error {
+	if d.Status {
+		return nil
+	}
+	_, err := app.db.Exec(`delete from host where appid=?`, d.Appid)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	return nil
+}
+
 type getLinkReq struct {
 	Appid string `json:"appid"`
 	Docid string `json:"docid"`
@@ -99,6 +128,7 @@ func init_web() {
 
 	g.POST("/api/upload_args", uploadArgsRequest)
 	g.POST("/api/upload_file", uploadFileRequest)
+	g.POST("/api/upload_host", uploadHostRequest)
 	g.POST("/api/getlink", getLinkRequest)
 	g.POST("/api/deletelink", deleteLinkRequest)
 
@@ -324,6 +354,44 @@ func uploadArgsRequest(c *gin.Context) {
 	}
 	// 返回数据
 	c.String(http.StatusOK, res.setOK(full_link).toString())
+}
+func uploadHostRequest(c *gin.Context) {
+	log.Info("-----------------")
+	log.Info("上传主机")
+	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("链接: %s", c.Request.URL.String())
+
+	var res resStruct
+	// 从body中读取数据
+	// 获取post请求的数据
+	b, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		log.Errorf("错误: %v", err)
+		c.String(http.StatusOK, res.setErrSystem().toString())
+		return
+	}
+
+	var data uploadHostReq
+	// 解析json数据
+	if err := json.Unmarshal(b, &data); err != nil {
+		log.Errorf("错误: %v", err)
+		c.String(http.StatusOK, res.setErrSystem().toString())
+		return
+	}
+	log.Infof("appid: %s", data.Appid)
+	log.Infof("host: %s", data.Host)
+	log.Infof("status: %v", data.Status)
+	if err := data.uploadTrue(); err != nil {
+		c.String(http.StatusOK, res.setErrSystem().toString())
+		return
+	}
+	if err := data.uploadFalse(); err != nil {
+		c.String(http.StatusOK, res.setErrSystem().toString())
+		return
+	}
+	c.String(http.StatusOK, res.setOK("上传主机成功").toString())
+	return
+	// c.Writer.Header().Set("Access-Control-Allow-Origin", "http://
 }
 func getLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
