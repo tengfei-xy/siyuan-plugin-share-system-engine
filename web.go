@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 	"github.com/tengfei-xy/go-tools"
-	tool "github.com/tengfei-xy/go-tools"
 )
 
 type uploadArgsReq struct {
@@ -120,7 +119,7 @@ func shareRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 	log.Infof("参数: %s", param)
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -161,35 +160,32 @@ func uploadFileRequest(c *gin.Context) {
 	log.Info("上传文件")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	var res resStruct
 	appid := c.Query("appid")
 	docid := c.Query("docid")
+	log.Infof("appid: %s", appid)
+	log.Infof("docid: %s", docid)
 
 	if len(appid) == 0 || len(docid) == 0 {
 		c.String(http.StatusOK, res.setErrParam().toString())
 		return
 
 	}
-	log.Infof("appid: %s", appid)
-	log.Infof("docid: %s", docid)
+	frontendType := c.Query("type")
+
+	if frontendType == "" {
+		frontendType = "desktop"
+		log.Infof("前端: %s(默认)", frontendType)
+	} else {
+		log.Infof("前端: %s", frontendType)
+	}
 
 	// 读取文件
 	file, err := c.FormFile("file")
-	if err != nil {
-		log.Error(err)
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
-
-	// 设定原始文件的名称
-	tmp_zip_file := fmt.Sprintf("%s_%s.zip", appid, docid)
-
-	// 保存原始文件
-	err = c.SaveUploadedFile(file, tmp_zip_file)
 	if err != nil {
 		log.Error(err)
 		c.String(http.StatusOK, res.setErrSystem().toString())
@@ -204,27 +200,28 @@ func uploadFileRequest(c *gin.Context) {
 		return
 	}
 
-	// 复制原始文件到资源文件夹中
-	dst_zip_file := filepath.Join(f, "resources.zip")
-	if _, err := tool.FileCopy(dst_zip_file, tmp_zip_file); err != nil {
+	zip_file := filepath.Join(f, "resources.zip")
+	// 保存文件
+	err = c.SaveUploadedFile(file, zip_file)
+	if err != nil {
 		log.Error(err)
+		c.String(http.StatusOK, res.setErrSystem().toString())
+		return
+	}
+	log.Infof("资源文件: %s", zip_file)
+
+	// 如果压缩包不存在
+	if !tools.FileExist(zip_file) {
 		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
 
 	// 解压文件
-	log.Infof("解压文件 文件名:%s", dst_zip_file)
-	if err := unzip(f, dst_zip_file); err != nil {
+	if err := unzip(f, zip_file); err != nil {
 		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
-	// 解压文件 结束
-	// 删除原始文件
-	if err := tools.FileRemove(tmp_zip_file); err != nil {
-		log.Error(err)
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
+
 	check_theme_file(f)
 	c.String(http.StatusOK, res.setOK("上传文件成功").toString())
 	return
@@ -236,7 +233,7 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("链接: %s", c.Request.URL.String())
 
 	var res resStruct
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -334,7 +331,7 @@ func getLinkRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -386,7 +383,7 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:61521")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -426,6 +423,9 @@ func deleteLinkRequest(c *gin.Context) {
 	c.String(http.StatusOK, res.setOK("删除链接成功").toString())
 }
 
+// 描述: 基于保存目录创建appid和docid文件夹
+// 返回: 返回创建的文件夹路径
+// 返回: 错误
 func mkdir_all(app_id, doc_id string) (string, error) {
 	// 创建目录
 	f := filepath.Join(app.Basic.SavePath, app_id, doc_id)
