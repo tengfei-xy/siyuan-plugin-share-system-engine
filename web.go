@@ -303,7 +303,7 @@ func uploadArgsRequest(c *gin.Context) {
 	content = strings.ReplaceAll(content, "{{ .Title }}", data.Title)
 	content = strings.ReplaceAll(content, "{{ .Content }}", data.Content)
 
-	f, err := os.Create(filepath.Join(tmp_html, "index.html"))
+	f, err := os.OpenFile(filepath.Join(tmp_html, "index.html"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0770)
 	if err != nil {
 		log.Error(err)
 		c.String(http.StatusOK, res.setErrSystem().toString())
@@ -444,7 +444,7 @@ func getLinkRequest(c *gin.Context) {
 
 	// 返回数据
 
-	c.String(http.StatusOK, res.setOK(fmt.Sprintf("http://124.223.15.220/%s", link)).toString())
+	c.String(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", app.ShareBaseLink, link)).toString())
 }
 func deleteLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
