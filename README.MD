@@ -44,6 +44,7 @@ basic:
 
 ```nginx
 location / {
+      proxy_set_header X-Real-IP $remote_addr;
 	    if (!-f $request_filename) {
             	proxy_pass http://127.0.0.1:25934/api/url$uri;
             	break;

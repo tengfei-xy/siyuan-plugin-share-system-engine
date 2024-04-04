@@ -24,34 +24,6 @@ type uploadArgsReq struct {
 	Version string `json:"version"`
 	Title   string `json:"title"`
 }
-type uploadHostReq struct {
-	Appid  string `json:"appid"`
-	Host   string `json:"host"`
-	Status bool   `json:"status"`
-}
-
-func (d *uploadHostReq) uploadTrue() error {
-	if !d.Status {
-		return nil
-	}
-	_, err := app.db.Exec("insert into host(appid,host) Values(?,?)  ON DUPLICATE KEY UPDATE `appid` = VALUES(`appid`),`host` = VALUES(`host`) ", d.Appid, d.Host)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
-func (d *uploadHostReq) uploadFalse() error {
-	if d.Status {
-		return nil
-	}
-	_, err := app.db.Exec(`delete from host where appid=?`, d.Appid)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
-}
 
 type getLinkReq struct {
 	Appid string `json:"appid"`
@@ -128,11 +100,16 @@ func init_web() {
 
 	g.POST("/api/upload_args", uploadArgsRequest)
 	g.POST("/api/upload_file", uploadFileRequest)
-	g.POST("/api/upload_host", uploadHostRequest)
 	g.POST("/api/getlink", getLinkRequest)
 	g.POST("/api/deletelink", deleteLinkRequest)
-
 	g.GET("/api/url/:url", shareRequest)
+
+	g.OPTIONS("/api/getlink", optionRequest)
+	g.OPTIONS("/api/upload_args", optionRequest)
+	g.OPTIONS("/api/upload_file", optionRequest)
+	g.OPTIONS("/api/deletelink", optionRequest)
+	g.OPTIONS("/api/url/:url", optionRequest)
+
 	g.MaxMultipartMemory = 100 << 20 // 100 MiB
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
 	// g.Use(CORSMiddleware())
@@ -149,10 +126,10 @@ func shareRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 	log.Infof("参数: %s", param)
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	var res resStruct
 	row := app.db.QueryRow(`select appid,docid,status from share where link=?`, param)
 	var appid, docid string
@@ -190,10 +167,12 @@ func uploadFileRequest(c *gin.Context) {
 	log.Info("上传文件")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+
+	cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+
 	var res resStruct
 	appid := c.Query("appid")
 	docid := c.Query("docid")
@@ -262,11 +241,12 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Info("上传参数")
 	log.Infof("链接: %s", c.Request.URL.String())
 
+	cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+
 	var res resStruct
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 	// 获取请求数据
 	b, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -355,54 +335,19 @@ func uploadArgsRequest(c *gin.Context) {
 	// 返回数据
 	c.String(http.StatusOK, res.setOK(full_link).toString())
 }
-func uploadHostRequest(c *gin.Context) {
-	log.Info("-----------------")
-	log.Info("上传主机")
-	log.Infof("IP: %s", c.ClientIP())
-	log.Infof("链接: %s", c.Request.URL.String())
 
-	var res resStruct
-	// 从body中读取数据
-	// 获取post请求的数据
-	b, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		log.Errorf("错误: %v", err)
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
-
-	var data uploadHostReq
-	// 解析json数据
-	if err := json.Unmarshal(b, &data); err != nil {
-		log.Errorf("错误: %v", err)
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
-	log.Infof("appid: %s", data.Appid)
-	log.Infof("host: %s", data.Host)
-	log.Infof("status: %v", data.Status)
-	if err := data.uploadTrue(); err != nil {
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
-	if err := data.uploadFalse(); err != nil {
-		c.String(http.StatusOK, res.setErrSystem().toString())
-		return
-	}
-	c.String(http.StatusOK, res.setOK("上传主机成功").toString())
-	return
-	// c.Writer.Header().Set("Access-Control-Allow-Origin", "http://
-}
 func getLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("获取链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
+	origin := c.Request.Header.Get("origin")
+	log.Infof("原始: %s", origin)
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 
 	var res resStruct
 
@@ -446,15 +391,28 @@ func getLinkRequest(c *gin.Context) {
 
 	c.String(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", app.ShareBaseLink, link)).toString())
 }
+func optionRequest(c *gin.Context) {
+	log.Info("-----------------")
+	log.Info("预检")
+	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("原始: %s", c.Request.Header.Get("origin"))
+	// cros_status := c.Request.Header.Get("cros-status")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "content-type, cros-status")
+	c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
+
+	return
+}
 func deleteLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:6806")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	var res resStruct
 	// 从body中读取数据
 	// 获取post请求的数据
