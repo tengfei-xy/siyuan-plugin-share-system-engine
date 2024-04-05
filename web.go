@@ -184,14 +184,6 @@ func uploadFileRequest(c *gin.Context) {
 		return
 
 	}
-	frontendType := c.Query("type")
-
-	if frontendType == "" {
-		frontendType = "desktop"
-		log.Infof("前端: %s(默认)", frontendType)
-	} else {
-		log.Infof("前端: %s", frontendType)
-	}
 
 	// 读取文件
 	file, err := c.FormFile("file")
@@ -237,8 +229,8 @@ func uploadFileRequest(c *gin.Context) {
 }
 func uploadArgsRequest(c *gin.Context) {
 	log.Info("-----------------")
-	log.Infof("IP: %s", c.ClientIP())
 	log.Info("上传参数")
+	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
 	cros_status := c.Request.Header.Get("cros-status")
@@ -341,8 +333,6 @@ func getLinkRequest(c *gin.Context) {
 	log.Info("获取链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-	origin := c.Request.Header.Get("origin")
-	log.Infof("原始: %s", origin)
 
 	cros_status := c.Request.Header.Get("cros-status")
 	if cros_status == "true" {
