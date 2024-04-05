@@ -13,7 +13,7 @@ const tempate_html = `
     <link rel="stylesheet" type="text/css" id="baseStyle" href="stage/build/export/base.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeDefaultStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
-    <title>{{ .Title }}  v{{ .Version }}</title>
+    <title>{{ .Title }}{{ .TitleVersion }}</title>
     <style>
         body {font-family: var(--b3-font-family);background-color: var(--b3-theme-background);color: var(--b3-theme-on-background)}
         .b3-typography, .protyle-wysiwyg, .protyle-title {font-size:16px !important}

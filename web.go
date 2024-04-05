@@ -17,12 +17,13 @@ import (
 )
 
 type uploadArgsReq struct {
-	Appid   string `json:"appid"`
-	Docid   string `json:"docid"`
-	Content string `json:"content"`
-	Theme   string `json:"theme"`
-	Version string `json:"version"`
-	Title   string `json:"title"`
+	Appid       string `json:"appid"`
+	Docid       string `json:"docid"`
+	Content     string `json:"content"`
+	Theme       string `json:"theme"`
+	Version     string `json:"version"`
+	Title       string `json:"title"`
+	HideVersion bool   `json:"hide_version"`
 }
 
 type getLinkReq struct {
@@ -258,6 +259,8 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("theme: %s", data.Theme)
 	log.Infof("version: %s", data.Version)
 	log.Infof("title: %s", data.Title)
+	log.Infof("content: %s", data.Content)
+	log.Infof("hide_version: %v", data.HideVersion)
 
 	// 创建资源文件夹，
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
@@ -268,12 +271,22 @@ func uploadArgsRequest(c *gin.Context) {
 		return
 	}
 
+	title_version := func() string {
+		if data.HideVersion {
+			return ""
+		} else {
+			return "   v" + data.Version
+
+		}
+	}
+
 	content := tempate_html
 
 	content = strings.ReplaceAll(content, "{{ .Theme }}", data.Theme)
 	content = strings.ReplaceAll(content, "{{ .Version }}", data.Version)
 	content = strings.ReplaceAll(content, "{{ .Title }}", data.Title)
 	content = strings.ReplaceAll(content, "{{ .Content }}", data.Content)
+	content = strings.ReplaceAll(content, "{{ .TitleVersion }}", title_version())
 
 	f, err := os.OpenFile(filepath.Join(tmp_html, "index.html"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0770)
 	if err != nil {
