@@ -7,12 +7,19 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  - env:
+  
+  - 
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
       - windows
       - darwin
+    binary: "spss_engine"
+    ldflags:
+     - -s -w -X main.build={{.Version}}
+    
+
 
 archives:
   - format: tar.gz
@@ -28,6 +35,10 @@ archives:
     format_overrides:
     - goos: windows
       format: zip
+    files:
+      - docker/
+      - LICENSE
+      - README.MD
 checksum:
   name_template: 'checksums.txt'
 snapshot:

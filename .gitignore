@@ -2,3 +2,4 @@ siyuan-plugin-share-system-engine
 config.yaml
 
 dist/
+src/dist/
