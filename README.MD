@@ -4,6 +4,29 @@
 
 服务器实现思路：请求特定的链接时，从mysql中查询app_id和doc_id，并重定向到nginx中。
 
+## docker部署
+
+1. 克隆项目
+
+   ```bash
+   git clone git@github.com:tengfei-xy/siyuan-plugin-share-system.git
+   cd siyuan-plugin-share-system
+   ```
+
+2. 构建应用镜像
+
+   ```bash
+   sudo docker build -t spss_engine  -f ./docker/Dockerfile .
+   ```
+
+3. docker-compose启动所有容器
+
+   
+
+​	
+
+
+
 ## 启动说明
 
 设置配置文件夹
