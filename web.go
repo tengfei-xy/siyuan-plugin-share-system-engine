@@ -113,9 +113,8 @@ func init_web() {
 
 	g.MaxMultipartMemory = 100 << 20 // 100 MiB
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
-	// g.Use(CORSMiddleware())
-	log.Infof("服务器启动，监听 %s", app.Basic.Listen)
-	g.Run(app.Basic.Listen)
+	log.Infof("服务器启动，监听 %s", app.Basic.ListenPort)
+	g.Run(app.Basic.ListenPort)
 }
 
 // 处理函数，
