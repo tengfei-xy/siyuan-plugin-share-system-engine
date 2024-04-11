@@ -10,15 +10,16 @@ import (
 	log "github.com/tengfei-xy/go-log"
 )
 
+var app appConfig
+
+const version string = "0.1.0"
+
 func init_flag() flagStruct {
 	var f flagStruct
 	flag.StringVar(&f.config_file, "c", "config.yaml", "打开配置文件")
 	flag.Parse()
 	return f
 }
-
-var app appConfig
-var version string
 
 func init_mysql() {
 	DB, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", app.Mysql.Username, app.Mysql.Password, app.Mysql.Ip, app.Mysql.Port, app.Mysql.Database))
@@ -36,7 +37,7 @@ func init_mysql() {
 
 func main() {
 
-	log.Infof("版本:%s", version)
+	log.Infof("版本:v%s", version)
 	f := init_flag()
 	init_config(f)
 	init_mysql()

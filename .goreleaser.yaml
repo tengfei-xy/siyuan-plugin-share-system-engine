@@ -15,7 +15,7 @@ builds:
       - darwin
     binary: "spss_engine"
     ldflags:
-     - -s -w -X main.version={{.Version}} -X main.date={{.Date}} 
+     - -s -w
     gcflags:
       - all=-trimpath={{ .ArtifactPath }}
     asmflags:
