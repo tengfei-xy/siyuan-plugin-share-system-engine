@@ -17,23 +17,26 @@ import (
 )
 
 type uploadArgsReq struct {
-	Appid       string `json:"appid"`
-	Docid       string `json:"docid"`
-	Content     string `json:"content"`
-	Theme       string `json:"theme"`
-	Version     string `json:"version"`
-	Title       string `json:"title"`
-	HideVersion bool   `json:"hide_version"`
+	Appid         string `json:"appid"`
+	Docid         string `json:"docid"`
+	Content       string `json:"content"`
+	Theme         string `json:"theme"`
+	SiyuanVersion string `json:"version"`
+	Title         string `json:"title"`
+	HideSYVersion bool   `json:"hide_version"`
+	PluginVersion string `json:"plugin_version"`
 }
 
 type getLinkReq struct {
-	Appid string `json:"appid"`
-	Docid string `json:"docid"`
+	Appid         string `json:"appid"`
+	Docid         string `json:"docid"`
+	PluginVersion string `json:"plugin_version"`
 }
 
 type deleteLinkReq struct {
-	Appid string `json:"appid"`
-	Docid string `json:"docid"`
+	Appid         string `json:"appid"`
+	Docid         string `json:"docid"`
+	PluginVersion string `json:"plugin_version"`
 }
 type resStruct struct {
 	Err  int    `json:"err"`
@@ -113,9 +116,8 @@ func init_web() {
 
 	g.MaxMultipartMemory = 100 << 20 // 100 MiB
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
-	// g.Use(CORSMiddleware())
-	log.Infof("服务器启动，监听 %s", app.Basic.Listen)
-	g.Run(app.Basic.Listen)
+	log.Infof("服务器启动，监听 %s", app.Basic.ListenPort)
+	g.Run(app.Basic.ListenPort)
 }
 
 // 处理函数，
@@ -257,10 +259,11 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("appid: %s", data.Appid)
 	log.Infof("docid: %s", data.Docid)
 	log.Infof("theme: %s", data.Theme)
-	log.Infof("version: %s", data.Version)
 	log.Infof("title: %s", data.Title)
 	log.Infof("content: %s", data.Content)
-	log.Infof("hide_version: %v", data.HideVersion)
+	log.Infof("sy_version: %s", data.SiyuanVersion)
+	log.Infof("hide_sy_version: %v", data.HideSYVersion)
+	log.Infof("plugin_version: %v", data.PluginVersion)
 
 	// 创建资源文件夹，
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
@@ -272,10 +275,10 @@ func uploadArgsRequest(c *gin.Context) {
 	}
 
 	title_version := func() string {
-		if data.HideVersion {
+		if data.HideSYVersion {
 			return ""
 		} else {
-			return "   v" + data.Version
+			return "   v" + data.SiyuanVersion
 
 		}
 	}
@@ -283,7 +286,7 @@ func uploadArgsRequest(c *gin.Context) {
 	content := tempate_html
 
 	content = strings.ReplaceAll(content, "{{ .Theme }}", data.Theme)
-	content = strings.ReplaceAll(content, "{{ .Version }}", data.Version)
+	content = strings.ReplaceAll(content, "{{ .Version }}", data.SiyuanVersion)
 	content = strings.ReplaceAll(content, "{{ .Title }}", data.Title)
 	content = strings.ReplaceAll(content, "{{ .Content }}", data.Content)
 	content = strings.ReplaceAll(content, "{{ .TitleVersion }}", title_version())
@@ -371,6 +374,7 @@ func getLinkRequest(c *gin.Context) {
 	}
 	log.Infof("appid: %s", data.Appid)
 	log.Infof("docid: %s", data.Docid)
+	log.Infof("插件版本: %v", data.PluginVersion)
 
 	// 处理请求
 	row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
@@ -412,6 +416,7 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
+
 	cros_status := c.Request.Header.Get("cros-status")
 	if cros_status == "true" {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -435,6 +440,7 @@ func deleteLinkRequest(c *gin.Context) {
 	}
 	log.Infof("appid: %s", data.Appid)
 	log.Infof("docid: %s", data.Docid)
+	log.Infof("插件版本: %v", data.PluginVersion)
 
 	_, err = app.db.Exec(`delete from share where appid=? and docid=?`, data.Appid, data.Docid)
 	if err != nil {

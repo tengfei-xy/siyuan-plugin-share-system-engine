@@ -10,6 +10,7 @@ const tempate_html = `
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="icon" href="data:;base64,=">
     <link rel="stylesheet" type="text/css" id="baseStyle" href="stage/build/export/base.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeDefaultStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>

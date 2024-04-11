@@ -1,0 +1,50 @@
+services:
+  spss_nginx:
+    image: "nginx:1.25.4"
+    container_name: spss_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/logs:/var/log/nginx
+    restart: always
+    networks:
+      - spss_network
+
+  spss_mysql:
+    image: "mysql:5.7.43"
+    container_name: spss_mysql
+    volumes:
+      - ./mysql/my.cnf:/etc/mysql/my.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: "password"
+      MYSQL_USER: 'share_system'
+      MYSQL_PASS: 'password'
+      MYSQL_DATABASE: 'share_system'
+    restart: always
+    privileged: true
+    networks:
+      - spss_network
+
+  spss_engine:
+    container_name: spss_engine
+    image: "spss_engine:0.1.0"
+    build:
+      context: ../
+      dockerfile: ./docker/Dockerfile
+      
+    environment:
+      SPSS_STARTUP_ENV: "docker"
+      SHARE_BASE_LINK: "http://127.0.0.1"
+      SAVE_PATH: "/data"
+      LISTEN_PORT: 25934
+      GIN_MODE: release
+    restart: always
+    volumes:
+      - ./:/data
+    networks:
+      - spss_network
+networks:
+  spss_network:
