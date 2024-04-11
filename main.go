@@ -12,7 +12,7 @@ import (
 
 var app appConfig
 
-const version string = "0.1.0"
+const version string = "1.0.0"
 
 func init_flag() flagStruct {
 	var f flagStruct
