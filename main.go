@@ -12,7 +12,7 @@ import (
 
 var app appConfig
 
-const version string = "1.0.0"
+const version string = "1.0.1"
 
 func init_flag() flagStruct {
 	var f flagStruct
@@ -36,8 +36,18 @@ func init_mysql() {
 }
 
 func main() {
-
-	log.Infof("版本:v%s", version)
+	fmt.Println(`
+.___________. _______ .__   __.   _______  _______  _______  __             ___   ___ ____    ____ 
+|           ||   ____||  \ |  |  /  _____||   ____||   ____||  |            \  \ /  / \   \  /   / 
+.---|  |----.|  |__   |   \|  | |  |  __  |  |__   |  |__   |  |  ______     \  V  /   \   \/   /  
+    |  |     |   __|  |  . .  | |  | |_ | |   __|  |   __|  |  | |______|     >   <     \_    _/   
+    |  |     |  |____ |  |\   | |  |__| | |  |     |  |____ |  |             /  .  \      |  |     
+    |__|     |_______||__| \__|  \______| |__|     |_______||__|            /__/ \__\     |__|     
+                                                                                                   
+	 `)
+	fmt.Println("思源笔记-分享笔记插件服务器: https://github.com/tengfei-xy/siyuan-plugin-share-system-engine")
+	fmt.Println("思源笔记-分享笔记插件: https://github.com/tengfei-xy/siyuan-plugin-share-system")
+	fmt.Printf("当前版本: v%s\n", version)
 	f := init_flag()
 	init_config(f)
 	init_mysql()

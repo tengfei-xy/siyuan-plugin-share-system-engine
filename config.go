@@ -16,6 +16,8 @@ type appConfig struct {
 	Mysql `yaml:"mysql"`
 	Basic `yaml:"basic"`
 	db    *sql.DB
+	// 仅仅用作判断是否属于docker环境
+	docker bool
 }
 type Basic struct {
 	ListenPort    string `yaml:"listen"`
@@ -91,6 +93,7 @@ type AppEnvironment struct {
 
 func init_config(flag flagStruct) {
 	log.Infof("读取配置文件")
+	app.docker = false
 
 	if tools.FileExist(flag.config_file) {
 		log.Infof("发现配置文件:%s", flag.config_file)
@@ -119,6 +122,7 @@ func init_config(flag flagStruct) {
 	}
 
 	log.Infof("发现docker环境")
+	app.docker = true
 	l := []string{"./", "./docker"}
 	var find bool = false
 	for _, v := range l {

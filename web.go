@@ -260,7 +260,8 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("docid: %s", data.Docid)
 	log.Infof("theme: %s", data.Theme)
 	log.Infof("title: %s", data.Title)
-	log.Infof("content: %s", data.Content)
+	// 不输出文档的内容，格式为html
+	// log.Infof("content: %s", data.Content)
 	log.Infof("sy_version: %s", data.SiyuanVersion)
 	log.Infof("hide_sy_version: %v", data.HideSYVersion)
 	log.Infof("plugin_version: %v", data.PluginVersion)
@@ -291,7 +292,7 @@ func uploadArgsRequest(c *gin.Context) {
 	content = strings.ReplaceAll(content, "{{ .Content }}", data.Content)
 	content = strings.ReplaceAll(content, "{{ .TitleVersion }}", title_version())
 
-	f, err := os.OpenFile(filepath.Join(tmp_html, "index.html"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0770)
+	f, err := os.OpenFile(filepath.Join(tmp_html, "index.html"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, get_file_permission())
 	if err != nil {
 		log.Error(err)
 		c.String(http.StatusOK, res.setErrSystem().toString())
@@ -456,32 +457,4 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Info("删除链接成功")
 	// 返回数据
 	c.String(http.StatusOK, res.setOK("删除链接成功").toString())
-}
-
-// 描述: 基于保存目录创建appid和docid文件夹
-// 返回: 返回创建的文件夹路径
-// 返回: 错误
-func mkdir_all(app_id, doc_id string) (string, error) {
-	// 创建目录
-	f := filepath.Join(app.Basic.SavePath, app_id, doc_id)
-	err := os.MkdirAll(f, 0755)
-	if err != nil {
-		if err != os.ErrExist {
-			log.Error(err)
-			return f, err
-		} else {
-			return "", err
-		}
-	}
-	return f, nil
-}
-func rmdir_all(app_id, doc_id string) error {
-	// 删除目录
-	f := filepath.Join(app.Basic.SavePath, app_id, doc_id)
-	err := os.RemoveAll(f)
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
 }

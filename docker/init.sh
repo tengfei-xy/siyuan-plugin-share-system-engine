@@ -49,9 +49,9 @@ function check_yq(){
     # macOS基本命令检测
     Darwin)
         which yq >/dev/null 2>&1 || {
-            echo "准备安装jq命令..."
+            echo "准备安装yq命令..."
             brew install yq || {
-                error "brew install yq 执行失败"
+                echo "brew install yq 执行失败"
                 exit 255
             }
         }
@@ -64,7 +64,7 @@ function check_yq(){
             which yq >/dev/null 2>&1 || {
                 echo "准备安装yq命令..."
                 sudo yum -y install yq || {
-                    error "sudo yum -y install yq 执行失败"
+                    echo "sudo yum -y install yq 执行失败"
                     exit 255
                 }
             }
@@ -76,7 +76,7 @@ function check_yq(){
             which yq >/dev/null 2>&1 || {
                 echo "准备安装yq命令..."
                 sudo apt -y install yq || {
-                    error "sudo apt -y install yq 执行失败"
+                    echo "sudo apt -y install yq 执行失败"
                     exit 255
                 }
             }
@@ -88,7 +88,7 @@ function check_yq(){
             which yq >/dev/null 2>&1 || {
                 echo "准备安装yq命令..."
                 sudo apt -y install yq || {
-                    error "sudo apt -y install yq 执行失败"
+                    echo "sudo apt -y install yq 执行失败"
                     exit 255
                 }
             }
