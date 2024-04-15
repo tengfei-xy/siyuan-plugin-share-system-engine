@@ -17,14 +17,15 @@ import (
 )
 
 type uploadArgsReq struct {
-	Appid         string `json:"appid"`
-	Docid         string `json:"docid"`
-	Content       string `json:"content"`
-	Theme         string `json:"theme"`
-	SiyuanVersion string `json:"version"`
-	Title         string `json:"title"`
-	HideSYVersion bool   `json:"hide_version"`
-	PluginVersion string `json:"plugin_version"`
+	Appid           string `json:"appid"`
+	Docid           string `json:"docid"`
+	Content         string `json:"content"`
+	Theme           string `json:"theme"`
+	SiyuanVersion   string `json:"version"`
+	Title           string `json:"title"`
+	HideSYVersion   bool   `json:"hide_version"`
+	PluginVersion   string `json:"plugin_version"`
+	ExistLinkCreate bool   `json:"exist_link_create"`
 }
 
 type getLinkReq struct {
@@ -262,9 +263,10 @@ func uploadArgsRequest(c *gin.Context) {
 	log.Infof("title: %s", data.Title)
 	// 不输出文档的内容，格式为html
 	// log.Infof("content: %s", data.Content)
-	log.Infof("sy_version: %s", data.SiyuanVersion)
-	log.Infof("hide_sy_version: %v", data.HideSYVersion)
-	log.Infof("plugin_version: %v", data.PluginVersion)
+	log.Infof("思源版本: %s", data.SiyuanVersion)
+	log.Infof("插件版本: %v", data.PluginVersion)
+	log.Infof("标题中隐藏思源版本: %v", data.HideSYVersion)
+	log.Infof("链接存在时重新创建: %v", data.ExistLinkCreate)
 
 	// 创建资源文件夹，
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
@@ -305,44 +307,57 @@ func uploadArgsRequest(c *gin.Context) {
 		return
 	}
 
-	link := createRand()
-	// 处理请求
-	var result sql.Result
-	result, err = app.db.Exec("INSERT INTO share(appid,docid,title,link) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE `title` = VALUES(`title`),`link` = VALUES(`link`) ", data.Appid, data.Docid, data.Title, link)
-	if err != nil {
-		log.Error(err)
+	// 根据appid和docid查看链接是否存在
+	row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
+	var link string
+
+	if err := row.Scan(&link); err != nil {
+		// 如果不存在就插入
+		if err == sql.ErrNoRows {
+			link := createRand()
+			full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
+			_, err := app.db.Exec("INSERT INTO share(appid,docid,title,link) VALUES(?,?,?,?)  ", data.Appid, data.Docid, data.Title, link)
+			if err != nil {
+				log.Error(err)
+				c.String(http.StatusOK, res.setErrSystem().toString())
+				return
+			}
+
+			log.Infof("创建参数成功")
+			log.Infof("创建分享链接: %s", full_link)
+			c.String(http.StatusOK, res.setOK(full_link).toString())
+			return
+		}
+		log.Error(row.Err())
 		c.String(http.StatusOK, res.setErrSystem().toString())
 		return
 	}
-	n, _ := result.RowsAffected()
-	old_link := false
-	if n == 0 {
-		// 处理请求
-		row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
 
-		if err := row.Scan(&link); err != nil {
+	// 链接存在时，更新链接
+	if data.ExistLinkCreate {
+		// 重新更新链接
+		link := createRand()
+		full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
+		_, err = app.db.Exec("update share set link=? where appid=? and docid=?", link, data.Appid, data.Docid)
+		if err != nil {
 			log.Error(err)
 			c.String(http.StatusOK, res.setErrSystem().toString())
 			return
-		} else {
-			old_link = true
 		}
-
-		c.String(http.StatusOK, res.toString())
+		log.Infof("更新参数成功")
+		log.Infof("更新分享链接: %s", full_link)
+		c.String(http.StatusOK, res.setOK(full_link).toString())
 		return
 	}
 
 	full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
 
-	log.Infof("link: %s", link)
-	log.Infof("flink: %s", full_link)
-	if old_link {
-		log.Infof("上传参数成功")
-	} else {
-		log.Infof("提取参数成功")
-	}
-	// 返回数据
+	log.Infof("提取参数成功")
+	log.Infof("当前分享链接: %s", full_link)
+
+	// link 是生成的
 	c.String(http.StatusOK, res.setOK(full_link).toString())
+
 }
 
 func getLinkRequest(c *gin.Context) {
@@ -404,7 +419,6 @@ func optionRequest(c *gin.Context) {
 	log.Info("预检")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("原始: %s", c.Request.Header.Get("origin"))
-	// cros_status := c.Request.Header.Get("cros-status")
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "content-type, cros-status")

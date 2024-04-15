@@ -16,7 +16,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
       # html的资源文件夹，spsse_engine的资源文件将保存与此
-      - ./nginx/html:/usr/share/nginx/html
+      # html的映射路径需要和nginx.conf的root指令相吻合
+      - ./nginx/html:/etc/nginx/html
       - ./nginx/logs:/var/log/nginx
 
     # 停止时，是否重启，不建议修改
@@ -47,7 +48,7 @@ services:
 
   spss_engine:
     # 构建的镜像名和tag，不建议修改
-    image: "spss_engine:1.0.1"
+    image: "spss_engine:1.1.0"
 
     # 容器名,不建议修改，启停时所需要的参数
     container_name: spss_engine

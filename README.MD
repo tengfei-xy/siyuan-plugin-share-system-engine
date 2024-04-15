@@ -68,6 +68,30 @@ sudo docker run -d \
   spss_engin
 ```
 
+### 1.5 应用容器升级过程（不涉及数据库变更的操作）
+
+首先，从最新版的压缩包中提取`spss_engine`二进制程序文件到`docker/`文件夹下，并修改`docker-compose.yaml`的`spss_engine`的镜像tag名，
+
+注：新版的`docker-compose.yaml`可能其他配置也有变化，而不仅仅是应用容器的tag名
+
+其次，停止容器
+
+```bash
+sudo docker-compose down spss_engine
+```
+
+可选的步骤，删除所有现存的应用镜像
+
+```bash
+sudo docker images | grep spss_engine | awk '{print $3}' | xargs -n1 sudo docker rmi
+```
+
+最后，构建镜像并后台运行
+
+```bash
+sudo docker-compose up -d spss_engine
+```
+
 
 
 
