@@ -51,7 +51,7 @@ services:
 
   spss_engine:
     # 构建的镜像名和tag，不建议修改
-    image: "spss_engine:1.1.0"
+    image: "spss_engine:1.1.1"
 
     # 容器名,不建议修改，启停时所需要的参数
     container_name: spss_engine
