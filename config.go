@@ -128,7 +128,7 @@ func init_config(flag flagStruct) {
 	for _, v := range l {
 		docker_config_file := filepath.Join(app.Basic.SavePath, v, "docker-compose.yml")
 		if tools.FileExist(docker_config_file) {
-			log.Infof("发现配置文件:%s", docker_config_file)
+			log.Infof("发现配置文件: %s", docker_config_file)
 			find = true
 			app.Basic.SavePath = filepath.Join(app.Basic.SavePath, v)
 		}
@@ -148,18 +148,36 @@ func init_config(flag flagStruct) {
 		panic(err)
 	}
 	trans_docker_config(docker_config)
-	log.Infof("分享地址的基础链接:%s", app.Basic.ShareBaseLink)
+	log.Infof("分享地址的基础链接: %s", app.Basic.ShareBaseLink)
 
 }
 func trans_docker_config(d Docker) {
-	nginx_port := strings.Split(d.Services.Nginx.Ports[0], ":")[0]
+	// 0.0.0.0:8080:80
+	// 80:80
+	// 获取宿主机端口
+	var nginx_port string
+	switch strings.Count(d.Services.Nginx.Ports[0], ":") {
+	case 1:
+		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[0]
+	case 2:
+		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[1]
+	case 3:
+		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[1]
+	default:
+		panic(fmt.Sprintln("docker-compose的nginx映射端口格式错误", d.Services.Nginx.Ports[0]))
+	}
+
+	if strings.Contains(nginx_port, ":") {
+		nginx_port = strings.Split(nginx_port, ":")[1]
+	}
+
 	for _, v := range d.Services.Nginx.Volumes {
 
 		// 获取docker-compose.yaml的serices字段中nginx容器的volumes字段
 		// 寻找带有html的字符串,将冒号前的部分其作为资源文件保存位置
 		if strings.Contains(v, "html") {
 			app.Basic.SavePath = filepath.Join(app.Basic.SavePath, strings.Split(v, ":")[0])
-			log.Infof("资源文件保存位置:%s", app.Basic.SavePath)
+			log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
 			break
 		}
 	}
@@ -171,11 +189,10 @@ func trans_docker_config(d Docker) {
 	app.Mysql.Password = d.Services.Db.Environment.MYSQLPASS
 
 	app.Basic.ListenPort = fmt.Sprintf(":%d", d.Services.App.Environment.ListenPort)
-	if nginx_port == "80" {
+	if nginx_port == "80" || nginx_port == "443" {
 		app.Basic.ShareBaseLink = d.Services.App.Environment.ShareBaseLink
-
 	} else {
-		app.Basic.ShareBaseLink = fmt.Sprintf("%s:%s", app.Basic.ListenPort, d.Services.App.Environment.ShareBaseLink)
+		app.Basic.ShareBaseLink = fmt.Sprintf("%s:%s", d.Services.App.Environment.ShareBaseLink, nginx_port)
 	}
 
 }

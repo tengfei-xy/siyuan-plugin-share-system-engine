@@ -9,9 +9,11 @@ services:
     # 容器名,不建议修改，启停时所需要的参数
     container_name: spss_nginx
 
-    # 端口映射，本地端口:容器端口，本地端口将作为分享链接的中的地址端口，如果是80，分享地址将忽略
+    # 端口映射，宿主端口将作为分享链接的中的地址端口，如果是80和443，输出的分享地址将忽略此端口
+    # 支持格式：宿主端口:容器端口，0.0.0.0:宿主端口:容器端口
+    # 目前仅支持第第一条映射参数，暂不支持更多的端口映射
     ports:
-      - "80:80"
+      - "0.0.0.0:6780:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/conf.d:/etc/nginx/conf.d
@@ -19,7 +21,7 @@ services:
       # html的映射路径需要和nginx.conf的root指令相吻合
       - ./nginx/html:/etc/nginx/html
       - ./nginx/logs:/var/log/nginx
-
+      - /etc/localtime:/etc/localtime
     # 停止时，是否重启，不建议修改
     restart: always
     # 网络配置，不可删除
@@ -34,6 +36,7 @@ services:
     container_name: spss_mysql
     volumes:
       - ./mysql/my.cnf:/etc/mysql/my.cnf
+      - /etc/localtime:/etc/localtime
     environment:
       MYSQL_ROOT_PASSWORD: "password"
       MYSQL_USER: 'share_system'
@@ -79,6 +82,7 @@ services:
     # 挂载的文件夹，不建议修改
     volumes:
       - ./:/data
+      - /etc/localtime:/etc/localtime
     # 网络配置，不可删除
     networks:
       - spss_network

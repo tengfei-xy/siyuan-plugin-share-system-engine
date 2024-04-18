@@ -18,29 +18,34 @@
 
 1. [下载](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases)并解压适合你的系统版本的压缩包
 
-2. docker-compose启动所有容器
+2. 修改docker-compose.yml，其他参数可以默认，`SHARE_BASE_LINK`不能默认，
+
+3. docker-compose启动所有容器
 
    ```bash
    cd docker/
    sudo docker-compose up -d
    ```
 
-3. 运行以上命令后，spss_mysql将执行初始化，spss_engine由于无法连接到数据库而自动重启，重启直到数据库初始化完成
+4. 运行以上命令后，spss_mysql将执行初始化，spss_engine由于无法连接到数据库而自动重启，重启直到数据库初始化完成
 
-4. spss_engine启动后，运行如下命令，仅支持linux和mac，WSL未测试
+5. spss_engine启动后，运行如下命令，仅支持linux和mac，WSL未测试
 
    ```bash
    ./init.sh
    ```
 
-5. 修改思源笔记的分享笔记插件的服务器地址并保存，每打开设置窗口，本插件就会获取链接，当控制台（切换为所有消息级别）输出`{"err":3,"msg":"此页面没有共享","data":""}`表示服务已正常启动。
+6. 修改思源笔记的分享笔记插件的服务器地址并保存，每打开设置窗口，本插件就会获取链接，当控制台（切换为所有消息级别）输出`{"err":3,"msg":"此页面没有共享","data":""}`表示服务已正常启动。
 
 ### 1.3 容器日志输出
 
 nginx容器日志
 
 ```bash
-sudo dcoker logs spsse_nginx
+
+sudo docker exec -it spss_nginx cat /var/log/nginx/access.log
+sudo docker exec -it spss_nginx cat /var/log/nginx/error.log
+
 ```
 
 

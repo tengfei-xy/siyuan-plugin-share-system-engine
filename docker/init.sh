@@ -1,16 +1,12 @@
 #!/bin/bash
 function main() {
-    read_yaml '.services.spss_mysql.environment.MYSQL_ROOT_PASSWORD'
-    root_passwd=${RET}
+    root_passwd=$(read_yaml 'MYSQL_ROOT_PASSWORD')
 
-    read_yaml '.services.spss_mysql.environment.MYSQL_USER'
-    user=${RET}
+    user=$(read_yaml 'MYSQL_USER')
 
-    read_yaml '.services.spss_mysql.environment.MYSQL_PASS'
-    passwd=${RET}
+    passwd=$(read_yaml 'MYSQL_PASS')
 
-    read_yaml '.services.spss_mysql.environment.MYSQL_DATABASE'
-    database=${RET}
+    database=$(read_yaml 'MYSQL_DATABASE')
 
     # 创建用户并赋权
     sudo docker exec -it spss_mysql sh -c  "mysql -u root -p${root_passwd} << EOF
@@ -29,12 +25,12 @@ EOF" | grep "${database}" > /dev/null 2>&1 && echo "初始化完成"
 }
 function read_yaml() {
     local ret
-    ret=$(yq  "$1" ./docker-compose.yml )
-    RET=${ret#*\"}
-    RET=${RET%*\"}
-    RET=${RET%*\'}
-    RET=${RET#*\'}
-
+    ret=$(grep "\ \{0,\}#" -v  ./docker-compose.yml | grep "$1" | awk  -F ':' '{print $2}')
+    ret=${ret#*\"}
+    ret=${ret%*\"}
+    ret=${ret%*\'}
+    ret=${ret#*\'}
+    echo "$ret"
 }
 
 # 当容器不存在时，直接退出
@@ -42,63 +38,5 @@ function check_docker(){
     sudo docker ps  | grep "spss_mysql" > /dev/null 2>&1 || { echo "mysql容器不存在" ; exit 255 ; }
 }
 
-# 安装yq命令，用于解析yaml文件
-function check_yq(){
-    os=$(uname)
-    case $os in
-    # macOS基本命令检测
-    Darwin)
-        which yq >/dev/null 2>&1 || {
-            echo "准备安装yq命令..."
-            brew install yq || {
-                echo "brew install yq 执行失败"
-                exit 255
-            }
-        }
-        return
-        ;;
-    Linux)
-        # Centos 基本命令检测
-        test -r /etc/redhat-release && grep "CentOS" /etc/redhat-release >/dev/null 2>&1 && {
-
-            which yq >/dev/null 2>&1 || {
-                echo "准备安装yq命令..."
-                sudo yum -y install yq || {
-                    echo "sudo yum -y install yq 执行失败"
-                    exit 255
-                }
-            }
-            return
-        }
-        # Ubuntu 基本命令检测
-        lsb_release -a 2>/dev/null | grep "Ubuntu" >/dev/null 2>&1 && {
-            
-            which yq >/dev/null 2>&1 || {
-                echo "准备安装yq命令..."
-                sudo apt -y install yq || {
-                    echo "sudo apt -y install yq 执行失败"
-                    exit 255
-                }
-            }
-            return
-        }
-        # Debian 基本命令检测
-        lsb_release -a 2>/dev/null | grep "Dibian" >/dev/null 2>&1 && {
-            
-            which yq >/dev/null 2>&1 || {
-                echo "准备安装yq命令..."
-                sudo apt -y install yq || {
-                    echo "sudo apt -y install yq 执行失败"
-                    exit 255
-                }
-            }
-            return
-        }
-        ;;
-
-    esac
-
-}
 check_docker
-check_yq
 main
