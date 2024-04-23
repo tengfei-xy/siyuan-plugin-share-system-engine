@@ -152,23 +152,9 @@ func init_config(flag flagStruct) {
 
 }
 func trans_docker_config(d Docker) {
-	// 0.0.0.0:8080:80
-	// 80:80
-	// 获取宿主机端口
-	var nginx_port string
-	switch strings.Count(d.Services.Nginx.Ports[0], ":") {
-	case 1:
-		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[0]
-	case 2:
-		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[1]
-	case 3:
-		nginx_port = strings.Split(d.Services.Nginx.Ports[0], ":")[1]
-	default:
-		panic(fmt.Sprintln("docker-compose的nginx映射端口格式错误", d.Services.Nginx.Ports[0]))
-	}
 
-	if strings.Contains(nginx_port, ":") {
-		nginx_port = strings.Split(nginx_port, ":")[1]
+	if len(d.Services.Nginx.Ports) == 0 {
+		panic("docker-compose的nginx端口映射为空")
 	}
 
 	for _, v := range d.Services.Nginx.Volumes {
@@ -189,10 +175,6 @@ func trans_docker_config(d Docker) {
 	app.Mysql.Password = d.Services.Db.Environment.MYSQLPASS
 
 	app.Basic.ListenPort = fmt.Sprintf(":%d", d.Services.App.Environment.ListenPort)
-	if nginx_port == "80" || nginx_port == "443" {
-		app.Basic.ShareBaseLink = d.Services.App.Environment.ShareBaseLink
-	} else {
-		app.Basic.ShareBaseLink = fmt.Sprintf("%s:%s", d.Services.App.Environment.ShareBaseLink, nginx_port)
-	}
+	app.Basic.ShareBaseLink = d.Services.App.Environment.ShareBaseLink
 
 }
