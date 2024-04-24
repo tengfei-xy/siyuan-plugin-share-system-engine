@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gin-contrib/gzip"
@@ -26,6 +27,7 @@ type uploadArgsReq struct {
 	HideSYVersion   bool   `json:"hide_version"`
 	PluginVersion   string `json:"plugin_version"`
 	ExistLinkCreate bool   `json:"exist_link_create"`
+	PageWide        string `json:"page_wide"`
 }
 
 type getLinkReq struct {
@@ -265,9 +267,9 @@ func uploadArgsRequest(c *gin.Context) {
 	// log.Infof("content: %s", data.Content)
 	log.Infof("思源版本: %s", data.SiyuanVersion)
 	log.Infof("插件版本: %v", data.PluginVersion)
+	log.Infof("页面宽度: %s", data.PageWide)
 	log.Infof("标题中隐藏思源版本: %v", data.HideSYVersion)
 	log.Infof("链接存在时重新创建: %v", data.ExistLinkCreate)
-
 	// 创建资源文件夹，
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
 	tmp_html, err := mkdir_all(data.Appid, data.Docid)
@@ -293,6 +295,27 @@ func uploadArgsRequest(c *gin.Context) {
 	content = strings.ReplaceAll(content, "{{ .Title }}", data.Title)
 	content = strings.ReplaceAll(content, "{{ .Content }}", data.Content)
 	content = strings.ReplaceAll(content, "{{ .TitleVersion }}", title_version())
+
+	content = strings.ReplaceAll(content, "{{ .PageWide }}", func(wide string) string {
+		if strings.HasSuffix(wide, "%") {
+			numstr := strings.TrimRight(wide, "%")
+			num, err := strconv.Atoi(numstr)
+			if (err != nil) || (num < 0) || (num > 100) {
+				return "500px"
+			}
+		} else if strings.HasSuffix(wide, "px") {
+			numstr := strings.TrimRight(wide, "px")
+			num, err := strconv.Atoi(numstr)
+			if (err != nil) || (num < 0) {
+				return "500px"
+			}
+		} else {
+			log.Warnf("宽度格式错误，设置为默认宽度，参数值:%s ", wide)
+			return "500px"
+		}
+		return wide
+
+	}(data.PageWide))
 
 	f, err := os.OpenFile(filepath.Join(tmp_html, "index.html"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, get_file_permission())
 	if err != nil {

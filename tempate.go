@@ -55,7 +55,7 @@ const tempate_html = `
 </head>
 <body>
 <div class="protyle-wysiwyg protyle-wysiwyg--attr"
-style="max-width: 800px;margin: 0 auto;"
+style="max-width: {{ .PageWide }};margin: 0 auto;"
 id="preview">
 {{ .Content }}
 <script src="appearance/icons/material/icon.js?{{ .Version }}"></script>

@@ -12,11 +12,12 @@ import (
 
 var app appConfig
 
-const version string = "1.2.0"
+const version string = "1.3.0"
 
 func init_flag() flagStruct {
 	var f flagStruct
 	flag.StringVar(&f.config_file, "c", "config.yaml", "打开配置文件")
+	flag.BoolVar(&f.version, "v", false, "查看版本号")
 	flag.Parse()
 	return f
 }

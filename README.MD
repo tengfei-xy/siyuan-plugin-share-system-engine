@@ -14,11 +14,11 @@
 2. spss_nginx表示nginx容器，spss_mysql表示mysql容器，spss_engine表示应用容器
 3. 容器所需参数和细节说明参考[docker-compose.yml](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/blob/main/docker/docker-compose.yml)
 
-### 1.2 域名配置说明（可选的步骤）
+### 1.2 带证书的域名配置说明（可选的步骤）
 
 示例：分享地址为share.tengfei-xy.com:6780
 
-1. 修改docker-compose.yml的nginx的映射容器端口，比如修改为443
+1. 修改docker-compose.yml的nginx的映射容器端口，比如修改为443，表示通过外部主机的6780端口访问nginx容器内部的的443端口
 
    ````yaml
      spss_nginx:
@@ -40,23 +40,47 @@
          SHARE_BASE_LINK: "https://share.tengfei-xy.com:6780"
    ```
 
-3. 上传文件到docker/nginx/ssl/（如果ssl文件夹不存在，需手动创建），并修改docker/nginx/nginx.conf
+3. 上传（共2个）证书文件到docker/nginx/ssl/（如果ssl文件夹不存在，需手动创建），并修改docker/nginx/nginx.conf,添加或修改server块
 
    ```nginx
    http{
    	...
-   	server{
-   		listen 443 ssl;
-   
-   		# 域名分享，需要修改此行, 例如：example.com
-   		server_name example.com;
-   
-   		# ssl 公钥证书文件，如果使用域名分享，需要修改此行的文件名,路径勿修改，
-   		ssl_certificate /etc/nginx/ssl/xxx;
-   
-   		# ssl 私钥文件，如果使用域名分享，需要修改此行的文件名,路径勿修改，
-   		ssl_certificate_key  /etc/nginx/ssl/xxx;
-   	}
+   		server {
+        listen 443 ssl;
+
+        # 域名分享，需修改, 例如：example.com
+        server_name example.com;
+
+        # ssl 公钥证书文件，如果使用域名分享，修改此行的文件名,路径勿修改
+        ssl_certificate /etc/nginx/ssl/xxx;
+
+        # ssl 私钥文件，如果使用域名分享，修改此行的文件名,路径勿修改
+        ssl_certificate_key  /etc/nginx/ssl/xxx;
+
+        ssl_session_timeout 5m;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
+        ssl_prefer_server_ciphers on;
+
+        location / {
+          proxy_set_header X-Real-IP $remote_addr;
+          if (!-f $request_filename) {
+            proxy_pass http://spss_engine_server/api/url$uri;
+            break;	
+          }
+          root /etc/nginx/html;
+        }
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+          root /etc/nginx/html;
+        }
+        location /api {
+          proxy_pass http://spss_engine_server;
+          proxy_redirect off;
+          proxy_set_header X-Real-IP $remote_addr;
+          client_max_body_size 100m;
+        }
+      }
    }
    ```
 
@@ -126,29 +150,36 @@ sudo docker run -d \
 
 ### 1.6 应用容器升级过程（不涉及数据库变更的操作）
 
-首先，从最新版的压缩包中提取`spss_engine`二进制程序文件到`docker/`文件夹下，并修改`docker-compose.yaml`的`spss_engine`的镜像tag名，
+首先从最新版的压缩包中提取`spss_engine`二进制程序文件到`docker/`文件夹下，并修改`docker-compose.yaml`的`spss_engine`的镜像tag名，注：新版的`docker-compose.yml`中的spss_engine容器配置可能也有变化，而不仅仅是应用容器的tag名
 
-注：新版的`docker-compose.yml`中的spss_engine容器配置可能也有变化，而不仅仅是应用容器的tag名
+- 手动执行
 
-其次，停止容器
+  1. 停止容器
 
-```bash
-sudo docker-compose down spss_engine
-```
+     ```
+     sudo docker-compose down spss_engine
+     ```
 
-可选的步骤，删除所有现存的应用镜像
+  2. 可选的步骤，删除所有现存的应用镜像
 
-```bash
-sudo docker images | grep spss_engine | awk '{print $3}' | xargs -n1 sudo docker rmi
-```
+     ```bash
+     sudo docker images | grep spss_engine | awk '{print $3}' | xargs -n1 sudo docker rmi
+     ```
 
-最后，构建镜像并后台运行
+  3. 最后，构建镜像并后台运行
 
-```bash
-sudo docker-compose up -d spss_engine
-```
+     ```bash
+     sudo docker-compose up -d spss_engine
+     ```
 
+- 自动执行
 
+  ```bash
+  cd docker
+  ./update_spss_engine.sh
+  ```
+
+  
 
 
 

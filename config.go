@@ -34,6 +34,7 @@ type Mysql struct {
 }
 type flagStruct struct {
 	config_file string
+	version     bool
 }
 
 type Docker struct {
@@ -92,6 +93,10 @@ type AppEnvironment struct {
 }
 
 func init_config(flag flagStruct) {
+	if flag.version {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 	log.Infof("读取配置文件")
 	app.docker = false
 
