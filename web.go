@@ -301,17 +301,17 @@ func uploadArgsRequest(c *gin.Context) {
 			numstr := strings.TrimRight(wide, "%")
 			num, err := strconv.Atoi(numstr)
 			if (err != nil) || (num < 0) || (num > 100) {
-				return "500px"
+				return "800px"
 			}
 		} else if strings.HasSuffix(wide, "px") {
 			numstr := strings.TrimRight(wide, "px")
 			num, err := strconv.Atoi(numstr)
 			if (err != nil) || (num < 0) {
-				return "500px"
+				return "800px"
 			}
 		} else {
 			log.Warnf("宽度格式错误，设置为默认宽度，参数值:%s ", wide)
-			return "500px"
+			return "800px"
 		}
 		return wide
 
