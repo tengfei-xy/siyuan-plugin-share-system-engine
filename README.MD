@@ -2,7 +2,7 @@
 
 插件实现思路：从插件中导出html文件并上传到web服务器，服务端同时生成对应的index.html作为首页。
 
-服务器实现思路：请求特定的链接时，从数据库中查询app\_id和doc\_id，并重定向到服务端的web接口中。
+服务器实现思路：请求特定的链接时，从数据库中查询`app_id`和`doc_id`，并重定向到服务端的web接口中。
 
 # 一、架构说明
 
@@ -17,7 +17,7 @@
 2. 确保存在go 1.21.4版本，安装[参考文档](https://www.wolai.com/tengfei-xy/bjUcRE7tSsscWqpszDvbxx "参考文档")
 3. 进入项目文件夹并开始编译
 
-   务必设置CGO\_ENABLED=1
+   务必设置`CGO_ENABLED`=1
    ```纯文本
    cd siyuan-plugin-share-system-engine
    CGO_ENABLED=1 go build -o spss_engine .
@@ -123,3 +123,21 @@
      ```bash
      curl -X PUT -u username:password http://<your_address>/api/db/table -F "file=@share_system.sql"
      ```
+# 四、API
+
+说明：API是用来查看数据库的记录，使用API之前，需要确保API接口在配置文件上被启用。如果包含了用户和密码，在请求中加入`Authorization: Basic base64(用户名:密码)`（[参考文档](https://apifox.com/help/auth/basic-auth/)）
+
+1. 查看所有数据
+```
+GET /api/db/table
+```
+
+2. 删除所有数据
+```
+DELETE /api/db/table
+```
+
+3. 提交旧版本的数据库文件(次文件因包含INSERT)
+```
+PUT /api/db/table
+```
