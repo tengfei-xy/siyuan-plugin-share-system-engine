@@ -1,240 +1,125 @@
-# 思源笔记分享笔记插件的服务器
+# 思源笔记分享笔记插件的服务器v2
 
-插件实现思路：从插件中导出html文件并上传到web服务器，web服务器同时生成对应的index.html作为首页。
+插件实现思路：从插件中导出html文件并上传到web服务器，服务端同时生成对应的index.html作为首页。
 
-服务器实现思路：请求特定的链接时，从mysql中查询app_id和doc_id，并重定向到nginx中。
+服务器实现思路：请求特定的链接时，从数据库中查询app\_id和doc\_id，并重定向到服务端的web接口中。
 
-## 一、docker部署
+# 一、架构说明
 
-注意：docker的部署目前尚且还比较稳定，请有动手能力的小伙伴依然小心尝试！但不具有升级的能力，有可能应用升级后，出现未知问题！不适用于生产环境哦~
+在v2.0中，仅有一个二进制程序，包含了web服务器。数据库采用了sqlite（本地文件的形式）。
 
-### 1.1容器说明
+# 二、编译
 
-1. spss表示siyuan-publig-share-system
-2. spss_nginx表示nginx容器，spss_mysql表示mysql容器，spss_engine表示应用容器
-3. 容器所需参数和细节说明参考[docker-compose.yml](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/blob/main/docker/docker-compose.yml)
+1. 克隆项目
+   ```text
+   git clone git@github.com:tengfei-xy/siyuan-plugin-share-system-engine.git
+   ```
+2. 确保存在go 1.21.4版本，安装[参考文档](https://www.wolai.com/tengfei-xy/bjUcRE7tSsscWqpszDvbxx "参考文档")
+3. 进入项目文件夹并开始编译
 
-### 1.2 带证书的域名配置说明（可选的步骤）
+   务必设置CGO\_ENABLED=1
+   ```纯文本
+   cd siyuan-plugin-share-system-engine
+   CGO_ENABLED=1 go build -o spss_engine .
+   ```
 
-示例：分享地址为share.tengfei-xy.com:6780
+## 二、部署方式（从0部署）
 
-1. 修改docker-compose.yml的nginx的映射容器端口，比如修改为443，表示通过外部主机的6780端口访问nginx容器内部的的443端口
+## 2.1 本地二进制运行
 
-   ````yaml
-     spss_nginx:
-       image: "nginx:1.25.4"
-       container_name: spss_nginx
-       ports:
-         - "0.0.0.0:6780:443"
-   ````
+注：不提供32位系统的二进制文件和windows arm。
 
-2. 修改docker-compose.yml的spss_engine容器参数，
+1. [下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
+2. 修改配置文件
+3. 安装musl
 
-   注：v1.1.1及以前的SHARE_BASE_LINK和nginx映射的主机端口共同组成分享地址
-
-   注：v1.2.0及之后的SHARE_BASE_LINK作为完整的分享地址，SHARE_BASE_LINK的端口要与nginx容器映射的宿主端口保持一致，80和443可以忽略
-
+   centos 7
    ```yaml
-     spss_engine:
-       environment:
-         SHARE_BASE_LINK: "https://share.tengfei-xy.com:6780"
+   sudo yum install -y musl-libc-static
    ```
-
-3. 上传（共2个）证书文件到docker/nginx/ssl/（如果ssl文件夹不存在，需手动创建），并修改docker/nginx/nginx.conf,添加或修改server块
-
-   ```nginx
-   http{
-   	...
-   		server {
-        listen 443 ssl;
-
-        # 域名分享，需修改, 例如：example.com
-        server_name example.com;
-
-        # ssl 公钥证书文件，如果使用域名分享，修改此行的文件名,路径勿修改
-        ssl_certificate /etc/nginx/ssl/xxx;
-
-        # ssl 私钥文件，如果使用域名分享，修改此行的文件名,路径勿修改
-        ssl_certificate_key  /etc/nginx/ssl/xxx;
-
-        ssl_session_timeout 5m;
-        ssl_protocols TLSv1.2 TLSv1.3;
-        ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
-        ssl_prefer_server_ciphers on;
-
-        location / {
-          proxy_set_header X-Real-IP $remote_addr;
-          if (!-f $request_filename) {
-            proxy_pass http://spss_engine_server/api/url$uri;
-            break;	
-          }
-          root /etc/nginx/html;
-        }
-        error_page 500 502 503 504 /50x.html;
-        location = /50x.html {
-          root /etc/nginx/html;
-        }
-        location /api {
-          proxy_pass http://spss_engine_server;
-          proxy_redirect off;
-          proxy_set_header X-Real-IP $remote_addr;
-          client_max_body_size 100m;
-        }
-      }
-   }
+   debian / ubuntu
+   ```yaml
+   sudo apt instal musl
    ```
-
-4. 填写分享插件的服务器地址为https://share.tengfei-xy.com:6780。注意这个地址是nginx访问地址，spss_engine容器参数的SHARE_BASE_LINK参数，仅仅作为给应用容器在插件需要创建分享并上传参数给服务，应用容器完成一系列创建分享步骤后返回给插件的地址（加上随机字符串）而已。
-
-5. 如果你在切换http和https，仅仅需要修改docker-compose.yml的nginx的映射容器端口即可，比如80换成443或443换成80。此处的修改无关上传了多少链接或页面，数据库本身不存储链接，仅仅存储分享地址中的随机字符串。由于nginx.conf同时存储了80和443的server块，因此他们是可以随意切换的。
-
-### 1.3 容器启动说明
-
-1. [下载](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases)并解压适合你的系统版本的压缩包
-
-2. 修改docker-compose.yml，其他参数可以默认，`SHARE_BASE_LINK`不能默认，
-
-3. docker-compose启动所有容器
-
+4. 运行启动
    ```bash
-   cd docker/
-   sudo docker-compose up -d
+   ./spss_engine -c config.yaml
    ```
 
-4. 运行以上命令后，spss_mysql将执行初始化，spss_engine由于无法连接到数据库而自动重启，重启直到数据库初始化完成
+## 2.2 docker
 
-5. spss_engine启动后，运行如下命令，仅支持linux和mac，WSL未测试
-
-   ```bash
-   ./init.sh
-   ```
-
-6. 修改思源笔记的分享笔记插件的服务器地址并保存，每打开设置窗口，本插件就会获取链接，当控制台（切换为所有消息级别）输出`{"err":3,"msg":"此页面没有共享","data":""}`表示服务已正常启动。
-
-### 1.4 容器日志输出
-
-nginx容器日志
-
-```bash
-
-sudo docker exec -it spss_nginx cat /var/log/nginx/access.log
-sudo docker exec -it spss_nginx cat /var/log/nginx/error.log
-
-```
-
-
-应用容器日志
-
-```bash
-sudo dcoker logs spsse_engine
-```
-
-### 1.5 应用容器的镜像删除
-
-当应用容器需要变更时，仅仅运行`sudo docker-compose up -d`是无法让新的应用容器运行，因为已经存在旧的镜像，因此需要先删除旧的容器，再执行`sudo docker-compose up -d`。
-
-其他指令参考
-
-```bash
-sudo docker run -d \
-  --name spss_engine \
-  -e SPSS_STARTUP_ENV=docker \
-  -e SHARE_BASE_LINK=http://127.0.0.1 \
-  -e SAVE_PATH=/data \
-  -e LISTEN_PORT=25934 \
-  -e GIN_MODE=release \
-  -v $(pwd):/data \
-  --restart always \
-  spss_engine
-```
-
-### 1.6 应用容器升级过程（不涉及数据库变更的操作）
-
-首先从最新版的压缩包中提取`spss_engine`二进制程序文件到`docker/`文件夹下，并修改`docker-compose.yaml`的`spss_engine`的镜像tag名，注：新版的`docker-compose.yml`中的spss_engine容器配置可能也有变化，而不仅仅是应用容器的tag名
-
-- 手动执行
-
-  1. 停止容器
-
-     ```
-     sudo docker-compose down spss_engine
-     ```
-
-  2. 可选的步骤，删除所有现存的应用镜像
-
-     ```bash
-     sudo docker images | grep spss_engine | awk '{print $3}' | xargs -n1 sudo docker rmi
-     ```
-
-  3. 最后，构建镜像并后台运行
-
-     ```bash
-     sudo docker-compose up -d spss_engine
-     ```
-
-- 自动执行
-
+- 一键部署
   ```bash
-  cd docker
-  ./update_spss_engine.sh
+  # IP访问 / http访问 / 关闭API访问密码保护
+  docker run -d -p 25934:25934 -v ./:/data \
+  -v /etc/localtime:/etc/localtime --restart=always \
+  -e SPSS_LISTEN=127.0.0.1:25934 \
+  -e SPSS_SAVE_PATH=/data \
+  -e SPSS_SHARE_LINK="http://127.0.0.1:25934" \
+  -e SPSS_WEB_FILE_MAX=100 \
+  --name=spss_engine \
+  tengfeixy/spss_engine:2.0.0
+
+
+  # https访问 / 启动API访问密码保护
+  docker run -d -p 25934:25934 -v ./:/data \
+  -v /etc/localtime:/etc/localtime --restart=always \
+  -e SPSS_LISTEN=0.0.0.0:25934 \
+  -e SPSS_SAVE_PATH=/data \
+  -e SPSS_SHARE_LINK="https://www.example.com:25934" \
+  -e SPSS_WEB_FILE_MAX=100 \
+  -e SPSS_WEB_SSL=true \
+  -e SPSS_WEB_SSL_CERT=./cert.pem \
+  -e SPSS_WEB_SSL_KEY=./cert.key \
+  -e SPSS_DB_API=true \
+  -e SPSS_DB_AUTH=username:password \
+  --name=spss_engine \
+  tengfeixy/spss_engine:2.0.0
   ```
+- 使用配置文件
+  1. 构建/拉取镜像
+     - 本地构建镜像,[下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
+       ```bash
+       docker build --no-cache=true -t spss_engine .
+       ```
+     - DockerHub拉取镜像
+       ```bash
+       docker build -t spss_engine .
+       ```
+  2. 在当前目录创建[config.yaml](https://raw.githubusercontent.com/tengfei-xy/siyuan-plugin-share-system-engine/refs/heads/main/config.yaml "config.yaml")，并修改
+  3. 运行容器
+     ```bash
+     docker run -d -p 25934:25934 -v ./:/data -v /etc/localtime:/etc/localtime --restart=always --name=spss_engine spss_engine
+     ```
 
-  
+# 三、升级（从旧版本1.x.x升级）
 
+1. 从mysql导出sql，参考语句
+   ```bash
+   bin/mysqldump -B share_system -u root -p -S /tmp/mysql.sock > ~/share_system.sql
+   ```
+2. 导入方式
 
+   注：程序只搜索导入的数据文件的开头为INSERT的语句。表初始化和创建又程序启动时自动完成。导入前，将清空数据表。
+   - 命令行
+     - 服务器在容器中
+       1. 将sql文件放入容器中
+          ```bash
+          docker cp ./share_system.sql  spss_engine:/
+          ```
+       2. 通过程序导入sql文件
+          ```bash
+          docker exec -it spss_engine /usr/sbin/spss_engine -d /share_system.sql
+          ```
+     - 服务器无docker环境
+       ```bash
+       spss_engine -d ./share_system.sql
+       ```
+   - 网络
 
-## 二、无docker环境部署（不推荐）
+     在服务器已启动后，通过curl或其他工具上传文件。
 
-### 2.1 应用所需的配置文件
-
-设置配置文件，文件名config.yaml
-
-```yaml
-basic:
-  # 监听的这个端口需要和nginx转发的地址相互吻合
-  listen: "127.0.0.1:25934"
-  
-  # 从插件上传数据文件到服务端的保存位置，建议写绝对路径
-  savePath: "/Users/tengfei/Documents/source/project/siyuan/engine/html"
-  
-  # 生成的短链接，将以此参数作为开头
-  shareBaseLink: "http://127.0.0.1:25934"
-
-```
-
-**权限说明**
-
-由插件上传的文件，均以755权限模式放置于`basic.savePath`路径。但要注意nginx用户的启动程序的用户的两者权限是否冲突。
-
-### 2.2 相关服务
-
-**nginx**
-
-作为主要的web服务器，版本无特别要求，作者使用1.25.4
-
-**参考配置**
-
-```nginx
-location / {
-      proxy_set_header X-Real-IP $remote_addr;
-	    if (!-f $request_filename) {
-            	proxy_pass http://127.0.0.1:25934/api/url$uri;
-            	break;
-            }
-            root   html;
-        }
-location /api {
-	            proxy_pass http://127.0.0.1:25934;
-                    proxy_redirect off;
-                    proxy_set_header X-Real-IP $remote_addr;
-		          client_max_body_size 100m;
-}
-```
-
-
-
-**mysql**
-
-作为链接和数据的存储，版本无特别要求，作者使用5.7.43
-
-参考：[建库文件](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/blob/main/docker/sql/ddl.sql)
+     注：此方法需要设置配置文件`apiEnable: true`或变量`SPSS_DB_API=true`，并设置用户名、密码。运行正常时，将返回被插入的数据。
+     ```bash
+     curl -X PUT -u username:password http://<your_address>/api/db/table -F "file=@share_system.sql"
+     ```
