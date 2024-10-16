@@ -52,9 +52,10 @@ func (ak accessKeyData) close() string {
 	}
 	return res.setOK("").toString()
 }
-func (ak accessKeyData) modify() string {
-	return ""
-}
+
+// func (ak accessKeyData) modify() string {
+// 	return ""
+// }
 
 func AccessKeyPOSTRequest(c *gin.Context) {
 

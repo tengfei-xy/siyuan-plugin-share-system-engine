@@ -105,7 +105,6 @@ func uploadFileRequest(c *gin.Context) {
 
 	check_theme_file(f)
 	c.String(http.StatusOK, res.setOK("上传文件成功").toString())
-	return
 }
 func uploadArgsRequest(c *gin.Context) {
 	log.Info("-----------------")

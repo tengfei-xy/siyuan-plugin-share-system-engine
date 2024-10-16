@@ -123,6 +123,15 @@
      ```bash
      curl -X PUT -u username:password http://<your_address>/api/db/table -F "file=@share_system.sql"
      ```
+3. 修改所有的index.html为index.htm
+
+  linux/macos参考命令
+  ```bash
+  for line in $(find 数据文件路径 -name 'index.html');do
+    sudo mv $line $(dirname $line)/index.htm
+  done
+  ```
+
 # 四、API
 
 说明：API是用来查看数据库的记录，使用API之前，需要确保API接口在配置文件上被启用。如果包含了用户和密码，在请求中加入`Authorization: Basic base64(用户名:密码)`（[参考文档](https://apifox.com/help/auth/basic-auth/)）
