@@ -5,24 +5,65 @@ before:
     # you may remove this if you don't need go generate
     - go generate ./...
 builds:
-  
   - 
+    id: "windows"
     env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
     goos:
-      - linux
       - windows
-      - darwin
-    binary: "spss_engine"
+    goarch:
+      - amd64
     ldflags:
-     - -s -w
+      - -s -w 
+    binary: "spss_engine"
     gcflags:
-      - all=-trimpath={{ .ArtifactPath }}
-    asmflags:
-      - all=-trimpath={{ .ArtifactPath }}
-    
+      - all=-trimpath=.
 
+  - 
+    id: "macos"
+    env:
+      - CGO_ENABLED=1
+    goos:
+    - darwin
+    goarch:
+    - amd64
+    - arm64
+    ldflags:
+    - -s -w
+    binary: "spss_engine"
+    gcflags:
+      - all=-trimpath=.
+  -
+    id: "linux"
+    env:
+      - CC=x86_64-linux-musl-gcc
+      - CGO_ENABLED=1
+    goos:
+    - linux
+    goarch:
+    - amd64
+    ldflags:
+    - -s -w
+    binary: "spss_engine"
+    gcflags:
+      - all=-trimpath=.  
 
+  -
+    id: "linux-arm64"
+    env:
+      - CC=aarch64-linux-musl-gcc
+      - CGO_ENABLED=1
+    goos:
+    - linux
+    goarch:
+    - arm64
+    ldflags:
+    - -s -w
+    binary: "spss_engine"
+    gcflags:
+      - all=-trimpath=.
 archives:
   - format: tar.gz
     name_template: >-
@@ -36,16 +77,7 @@ archives:
     - goos: windows
       format: zip
     files:
-      - docker/
       - LICENSE
       - README.MD
-checksum:
-  name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
+      - config.yaml
+      - Dockerfile

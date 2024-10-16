@@ -5,14 +5,13 @@ go 1.21.4
 require (
 	github.com/gin-contrib/gzip v1.0.0
 	github.com/gin-gonic/gin v1.9.1
-	github.com/go-sql-driver/mysql v1.8.1
-	github.com/tengfei-xy/go-log v0.1.2
+	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/tengfei-xy/go-log v0.2.4
 	github.com/tengfei-xy/go-tools v0.1.3
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/bytedance/sonic v1.11.3 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.1 // indirect

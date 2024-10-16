@@ -1,6 +1,9 @@
 siyuan-plugin-share-system-engine
-config.yaml
+my.yaml
 *.swp
 dist/
 src/dist/
 **/.DS_Store
+html/
+info.db
+.vscode

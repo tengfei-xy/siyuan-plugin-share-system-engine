@@ -1,0 +1,45 @@
+basic:
+  # 服务端监听的地址与端口
+  # SPSS_LISTEN
+  listen: "0.0.0.0:25934"
+  
+  # 从插件上传数据文件到服务端的保存位置，建议写绝对路径
+  # 如果是docker部署，且有映射路径，填写映射后的地址
+  # SPSS_SAVE_PATH
+  savePath: "/data"
+  
+  # 生成的短链接，将以此参数作为开头
+  # SPSS_SHARE_LINK
+  shareBaseLink: "http://127.0.0.1:25934"
+  
+web:
+  # 从插件上传数据文件的大小限制，单位MB
+  # SPSS_WEB_FILE_MAX
+  fileMaxMB: 100
+
+
+  # 启动https服务器
+  # SPSS_WEB_SSL
+  sslEnable: false
+
+  # https的证书文件路径
+  # SPSS_WEB_SSL_CERT
+  sslCert: "./"
+  # https的证书文件路径
+  # SPSS_WEB_SSL_KEY
+  sslKEY: "./"
+
+sql:
+    # 通过API访问sql相关数据的用户信息
+    # SPSS_DB_API=true
+    apiEnable: false
+
+    # API启动时，username和password均为空 或 仅password为空时，关闭密码访问
+    # API关闭时，username与password设置无效
+    # SPSS_DB_AUTH，格式为SPSS_DB_AUTH=username:password
+    username: ""
+    password: ""
+
+    # sqlite的数据文件的路径,如果不存在，自动生成。
+    # SPSS_DB_SAVE
+    sysFilename: "info.db"

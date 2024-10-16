@@ -98,3 +98,30 @@ id="preview">
     });
 </script></body></html>
 `
+const access_key_html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>访问码</title>
+</head>
+<body>
+
+<script>
+ function getAccessKey() {
+    let accessKey = prompt("请输入访问码：");
+    if (accessKey) {
+            var currentUrl = window.location.href;
+            var newUrl = currentUrl + '?access_key=' + encodeURIComponent(accessKey);
+            window.location.href = newUrl;
+    } else {
+      // 如果用户没有输入访问码，则再次调用 getAccessKey 函数
+      getAccessKey(); 
+    }
+  }
+  getAccessKey(); 
+</script>
+
+</body>
+</html>
+ 
+`

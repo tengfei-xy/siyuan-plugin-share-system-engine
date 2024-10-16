@@ -2,9 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/tengfei-xy/go-log"
@@ -13,95 +14,79 @@ import (
 )
 
 type appConfig struct {
-	Mysql `yaml:"mysql"`
 	Basic `yaml:"basic"`
+	Web   `yaml:"web"`
+	SQL   `yaml:"sql"`
 	db    *sql.DB
-	// 仅仅用作判断是否属于docker环境
-	docker bool
 }
 type Basic struct {
 	ListenPort    string `yaml:"listen"`
 	SavePath      string `yaml:"savePath"`
 	ShareBaseLink string `yaml:"shareBaseLink"`
 }
-
-type Mysql struct {
-	Ip       string `yaml:"ip"`
-	Port     string `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Database string `yaml:"database"`
+type Web struct {
+	FileMaxMB int64  `yaml:"fileMaxMB"`
+	SSLEnable bool   `yaml:"sslEnable"`
+	SSLCERT   string `yaml:"sslCERT"`
+	SSLKEY    string `yaml:"sslKEY"`
 }
+type SQL struct {
+	APIEnable   bool   `yaml:"apiEnable"`
+	Username    string `yaml:"username"`
+	Password    string `yaml:"password"`
+	SYSFilename string `yaml:"sysFilename"`
+}
+
 type flagStruct struct {
 	config_file string
+	db_file     string
 	version     bool
 }
 
-type Docker struct {
-	// Version  string   `yaml:"version"`
-	Services Services `yaml:"services"`
-}
+func (app *appConfig) is_empty() {
+	if app.ListenPort == "" {
+		app.ListenPort = "0.0.0.0:25934"
+		log.Infof("监听端口使用强制参数:%s", app.ListenPort)
+	}
+	if app.SavePath == "" {
+		app.SavePath = "/data"
+		log.Infof("存储路径使用强制参数:%s", app.SavePath)
+	}
+	if app.ShareBaseLink == "" {
+		app.ShareBaseLink = "http://127.0.0.1:25934"
+		log.Infof("分享地址使用强制参数:%s", app.Basic.ShareBaseLink)
+	}
+	if app.FileMaxMB < 0 {
+		app.FileMaxMB = 100
+		log.Infof("最大文件使用强制参数:%d", app.FileMaxMB)
+	}
+	if app.SQL.SYSFilename == "" {
+		app.SQL.SYSFilename = "info.db"
+		log.Infof("数据库存储文件使用强制参数:%s", app.SQL.SYSFilename)
 
-type Services struct {
-	Nginx Nginx `yaml:"spss_nginx"`
-	Db    Db    `yaml:"spss_mysql"`
-	App   App   `yaml:"spss_engine"`
+	}
 }
+func init_flag() flagStruct {
+	var f flagStruct
+	flag.StringVar(&f.config_file, "c", "config.yaml", "打开配置文件")
+	flag.StringVar(&f.db_file, "d", "", "清空数据并导入SQL数据文件")
+	flag.BoolVar(&f.version, "v", false, "查看版本号")
 
-type Nginx struct {
-	Image         string   `yaml:"image"`
-	ContainerName string   `yaml:"container_name"`
-	Ports         []string `yaml:"ports"`
-	Volumes       []string `yaml:"volumes"`
-	Restart       string   `yaml:"restart"`
+	flag.Parse()
+	return f
 }
-
-type Db struct {
-	Restart       string      `yaml:"restart"`
-	Privileged    bool        `yaml:"privileged"`
-	Image         string      `yaml:"image"`
-	ContainerName string      `yaml:"container_name"`
-	Volumes       []string    `yaml:"volumes"`
-	Environment   Environment `yaml:"environment"`
-	Links         []string    `yaml:"links"`
-}
-
-type Environment struct {
-	MYSQLROOTPASSWORD string `yaml:"MYSQL_ROOT_PASSWORD"`
-	MYSQLUSER         string `yaml:"MYSQL_USER"`
-	MYSQLPASS         string `yaml:"MYSQL_PASS"`
-	MYSQLDATABASE     string `yaml:"MYSQL_DATABASE"`
-}
-
-type App struct {
-	ContainerName string         `yaml:"container_name"`
-	Build         Build          `yaml:"build"`
-	Environment   AppEnvironment `yaml:"environment"`
-	Restart       string         `yaml:"restart"`
-	Volumes       []string       `yaml:"volumes"`
-}
-
-type Build struct {
-	Context    string `yaml:"context"`
-	Dockerfile string `yaml:"dockerfile"`
-}
-
-type AppEnvironment struct {
-	SPSSSTARTUPENV string `yaml:"SPSS_STARTUP_ENV"`
-	ShareBaseLink  string `yaml:"SHARE_BASE_LINK"`
-	ListenPort     int    `yaml:"LISTEN_PORT"`
-}
-
 func init_config(flag flagStruct) {
 	if flag.version {
 		fmt.Println(version)
 		os.Exit(0)
 	}
 	log.Infof("读取配置文件")
-	app.docker = false
-
-	if tools.FileExist(flag.config_file) {
-		log.Infof("发现配置文件:%s", flag.config_file)
+	l := []string{flag.config_file, "/data/config.yaml", "/config.yaml"}
+	for _, f := range l {
+		if !tools.FileExist(f) {
+			continue
+		}
+		log.Infof("配置文件: %s", flag.config_file)
 		yamlFile, err := os.ReadFile(flag.config_file)
 		if err != nil {
 			panic(err)
@@ -110,76 +95,67 @@ func init_config(flag flagStruct) {
 		if err != nil {
 			panic(err)
 		}
-		log.Infof("资源文件保存位置:%s", app.Basic.SavePath)
+
+		log.Infof("共享链接: %s", app.Basic.ShareBaseLink)
+		log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
 		return
 	}
-
-	s := os.Getenv("SPSS_STARTUP_ENV")
-	save_path := os.Getenv("SAVE_PATH")
-	if save_path == "" {
-		panic("未设置SAVE_PATH环境变量")
-	}
-	app.Basic.SavePath = save_path
-	if s != "docker" {
-		panic("不是预设的SPSS_STARTUP_ENV变量")
-	} else if s == "" {
-		panic("未设置SPSS_STARTUP_ENV环境变量")
-	}
-
-	log.Infof("发现docker环境")
-	app.docker = true
-	l := []string{"./", "./docker"}
-	var find bool = false
-	for _, v := range l {
-		docker_config_file := filepath.Join(app.Basic.SavePath, v, "docker-compose.yml")
-		if tools.FileExist(docker_config_file) {
-			log.Infof("发现配置文件: %s", docker_config_file)
-			find = true
-			app.Basic.SavePath = filepath.Join(app.Basic.SavePath, v)
-		}
-	}
-
-	if !find {
-		panic(fmt.Sprintf("未在%s下找到docker-compose.yml文件", app.Basic.SavePath))
-	}
-
-	yamlFile, err := os.ReadFile(filepath.Join(app.Basic.SavePath, "docker-compose.yml"))
-	if err != nil {
-		panic(err)
-	}
-	var docker_config Docker
-	err = yaml.Unmarshal(yamlFile, &docker_config)
-	if err != nil {
-		panic(err)
-	}
-	trans_docker_config(docker_config)
-	log.Infof("分享地址的基础链接: %s", app.Basic.ShareBaseLink)
-
 }
-func trans_docker_config(d Docker) {
-
-	if len(d.Services.Nginx.Ports) == 0 {
-		panic("docker-compose的nginx端口映射为空")
+func init_env() {
+	if v := os.Getenv("SPSS_LISTEN"); v != "" {
+		log.Infof("SPSS_LISTEN=%s", v)
+		app.ListenPort = v
 	}
 
-	for _, v := range d.Services.Nginx.Volumes {
+	if v := os.Getenv("SPSS_SAVE_PATH"); v != "" {
+		log.Infof("SPSS_SAVE_PATH=%s", v)
+		app.Basic.SavePath = v
+	}
 
-		// 获取docker-compose.yaml的serices字段中nginx容器的volumes字段
-		// 寻找带有html的字符串,将冒号前的部分其作为资源文件保存位置
-		if strings.Contains(v, "html") {
-			app.Basic.SavePath = filepath.Join(app.Basic.SavePath, strings.Split(v, ":")[0])
-			log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
-			break
+	if v := os.Getenv("SPSS_SHARE_LINK"); v != "" {
+		log.Infof("SPSS_SHARE_LINK=%s", v)
+		app.Basic.ShareBaseLink = v
+	}
+	if v := os.Getenv("SPSS_WEB_FILE_MAX"); v != "" {
+		i, err := strconv.Atoi(v)
+		if err != nil {
+			app.Web.FileMaxMB = 100
+			log.Infof("最大文件使用强制参数:%d", app.FileMaxMB)
+		} else {
+
+			app.Web.FileMaxMB = int64(i)
+		}
+		log.Infof("SPSS_WEB_FILE_MAX=%s", v)
+	}
+	if v := os.Getenv("SPSS_WEB_SSL"); v == "true" || v == "TRUE" {
+		app.Web.SSLEnable = true
+		if v := os.Getenv("SPSS_WEB_SSL_CERT"); v != "" {
+			log.Infof("SPSS_WEB_SSL_CERT=%s", v)
+			app.Web.SSLCERT = v
+		}
+		if v := os.Getenv("SPSS_WEB_SSL_KEY"); v != "" {
+			log.Infof("SPSS_WEB_SSL_KEY=%s", v)
+			app.Web.SSLKEY = v
 		}
 	}
-	app.Mysql.Ip = "spss_mysql"
+	if v := os.Getenv("SPSS_DB_API"); v == "true" || v == "TRUE" {
+		log.Infof("SPSS_DB_API=%s", v)
+		app.SQL.APIEnable = true
+	}
 
-	app.Mysql.Port = "3306"
-	app.Mysql.Database = d.Services.Db.Environment.MYSQLDATABASE
-	app.Mysql.Username = "root"
-	app.Mysql.Password = d.Services.Db.Environment.MYSQLPASS
+	if v := os.Getenv("SPSS_DB_AUTH"); v != "" {
+		if !strings.Contains(v, ":") {
+			log.Fatal("SPSS_DB_LOGIN变量格式错误")
+		}
+		l := strings.Split(v, ":")
+		app.SQL.APIEnable = true
+		app.SQL.Username = l[0]
+		app.SQL.Password = l[1]
+		log.Infof("SPSS_DB_AUTH=%s", v)
 
-	app.Basic.ListenPort = fmt.Sprintf(":%d", d.Services.App.Environment.ListenPort)
-	app.Basic.ShareBaseLink = d.Services.App.Environment.ShareBaseLink
-
+	}
+	if v := os.Getenv("SPSS_DB_SAVE"); v != "" {
+		app.SQL.SYSFilename = v
+	}
+	app.is_empty()
 }

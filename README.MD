@@ -190,25 +190,16 @@ sudo docker run -d \
 设置配置文件，文件名config.yaml
 
 ```yaml
-mysql:
-  ip: "127.0.0.1"
-  port: "3306"
-  # 写死于程序代码中
-  username: "share_system"
-  # 可自定义
-  password: "password"
-  # 写死于程序代码中
-  database: "share_system"
-  
 basic:
   # 监听的这个端口需要和nginx转发的地址相互吻合
   listen: "127.0.0.1:25934"
   
-  # 插件上传的保存位置
-  savePath: "/usr/local/services/nginx-1.25.4/html"
+  # 从插件上传数据文件到服务端的保存位置，建议写绝对路径
+  savePath: "/Users/tengfei/Documents/source/project/siyuan/engine/html"
   
   # 生成的短链接，将以此参数作为开头
-  shareBaseLink: "http://124.223.15.220"
+  shareBaseLink: "http://127.0.0.1:25934"
+
 ```
 
 **权限说明**

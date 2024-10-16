@@ -87,7 +87,6 @@ func update_theme_file(dir string, theme string) error {
 // 返回: 返回创建的文件夹路径
 // 返回: 错误
 func mkdir_all(app_id, doc_id string) (string, error) {
-	// 创建目录
 	f := filepath.Join(app.Basic.SavePath, app_id, doc_id)
 	err := os.MkdirAll(f, get_folder_permission())
 	if err != nil {
@@ -100,8 +99,9 @@ func mkdir_all(app_id, doc_id string) (string, error) {
 	}
 	return f, nil
 }
+
+// 删除目录
 func rmdir_all(app_id, doc_id string) error {
-	// 删除目录
 	f := filepath.Join(app.Basic.SavePath, app_id, doc_id)
 	err := os.RemoveAll(f)
 	if err != nil {
@@ -112,16 +112,8 @@ func rmdir_all(app_id, doc_id string) error {
 }
 
 func get_file_permission() fs.FileMode {
-	if app.docker {
-		return 0666
-	} else {
-		return 0660
-	}
+	return 0660
 }
 func get_folder_permission() fs.FileMode {
-	if app.docker {
-		return 0777
-	} else {
-		return 0755
-	}
+	return 0755
 }
