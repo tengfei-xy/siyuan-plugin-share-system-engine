@@ -11,6 +11,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/tengfei-xy/go-log v0.2.4
 	github.com/tengfei-xy/go-tools v0.1.3
+	golang.org/x/net v0.29.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -36,7 +37,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	golang.org/x/arch v0.7.0 // indirect
 	golang.org/x/crypto v0.27.0 // indirect
-	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
