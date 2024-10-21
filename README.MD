@@ -49,6 +49,8 @@
 ## 2.2 docker
 
 - 一键部署
+  注： `-p`的容器端口需要和`SPSS_LISTEN`变量的端口保持一直。作为使用者，需要修改的是-p的宿主端口和`SPSS_SHARE_LINK`变量的端口（如有需要）
+  
   ```bash
   # IP访问 / http访问 / 关闭API访问密码保护
   docker run -d -p 25934:25934 -v ./:/data \
@@ -58,7 +60,7 @@
   -e SPSS_SHARE_LINK="http://127.0.0.1:25934" \
   -e SPSS_WEB_FILE_MAX=100 \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.0.0
+  tengfeixy/spss_engine:2.1.0
 
 
   # https访问 / 启动API访问密码保护
@@ -74,7 +76,7 @@
   -e SPSS_DB_API=true \
   -e SPSS_DB_AUTH=username:password \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.0.0
+  tengfeixy/spss_engine:2.1.0
   ```
 - 使用配置文件
   1. 构建/拉取镜像
