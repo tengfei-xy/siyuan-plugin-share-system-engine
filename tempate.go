@@ -15,6 +15,7 @@ const tempate_html = `
     <link rel="stylesheet" type="text/css" id="themeDefaultStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
     <title>{{ .Title }}{{ .TitleVersion }}</title>
+    {{ .MiniMenuStyle }}
     <style>
         body {font-family: var(--b3-font-family);background-color: var(--b3-theme-background);color: var(--b3-theme-on-background)}
         .b3-typography, .protyle-wysiwyg, .protyle-title {font-size:16px !important}
@@ -57,6 +58,8 @@ const tempate_html = `
 <div class="protyle-wysiwyg protyle-wysiwyg--attr"
 style="max-width: {{ .PageWide }};margin: 0 auto;"
 id="preview">
+<div id="toc-container"> </div>
+
 {{ .Content }}
 <script src="appearance/icons/material/icon.js?{{ .Version }}"></script>
 <script src="stage/build/export/protyle-method.js?{{ .Version }}"></script>
@@ -96,7 +99,9 @@ id="preview">
             event.stopPropagation();
       })
     });
-</script></body></html>
+</script>
+{{ .MiniMenuScript }}
+</body></html>
 `
 const access_key_html = `
 <!DOCTYPE html>
@@ -125,3 +130,83 @@ const access_key_html = `
 </html>
  
 `
+const mini_menu_script = `
+  <script>
+  const divs = document.querySelectorAll('div[data-subtype]');
+  const headings = [];
+
+  divs.forEach(div => {
+  const subtype = div.getAttribute('data-subtype');
+  const nodeId = div.getAttribute('data-node-id'); // 获取 data-node-id 属性
+  if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(subtype)) {
+    const title = div.firstElementChild.textContent;
+    headings.push({
+      nodeId: nodeId, // 使用 data-node-id
+      subtype: subtype,
+      title: title
+    });
+  }
+});
+
+let tocHtml = '<ul>';
+headings.forEach(heading => {
+  const indent = (parseInt(heading.subtype.replace('h', '')) - 1) * 20; // 计算缩进值
+  tocHtml += ` + "`<li style=\"padding-left: ${indent}px\"><a href=\"#${heading.nodeId}\">${heading.title}</a></li>`; // 使用 data-node-id " + `
+});
+tocHtml += '</ul>';
+
+const tocContainer = document.getElementById('toc-container');
+tocContainer.innerHTML = tocHtml;
+
+const tocLinks = document.querySelectorAll('#toc-container a');
+tocLinks.forEach(link => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    const targetId = link.getAttribute('href').substring(1); // 去掉 '#' 符号
+    const targetDiv = document.querySelector(` + "`[data-node-id=\"${targetId}\"]`" + `); // 使用 data-node-id 查询元素
+    
+        // 调试信息
+    // console.log('Scrolled to:', targetId);
+    if (targetDiv) {
+      // console.log('Target element found:', targetDiv);
+      targetDiv.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      console.error('Target element not found for:', targetId);
+    }
+
+  });
+});
+</script>
+`
+const mini_menu_style = `
+<style>
+#toc-container {
+  position: fixed;
+  top: 50%;
+  left: 20px;
+  transform: translateY(-50%);
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 5px;
+  z-index: 100; /* 确保菜单在其他元素上方 */
+}
+
+#toc-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#toc-container li a {
+  display: block;
+  padding: 5px 10px;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+#toc-container li a:hover {
+  color: #333;
+}
+
+</style>`

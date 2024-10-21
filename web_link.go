@@ -11,9 +11,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 	"github.com/tengfei-xy/go-tools"
+	"golang.org/x/net/html"
 )
 
 type getLinkReq struct {
@@ -28,18 +30,20 @@ type deleteLinkReq struct {
 	PluginVersion string `json:"plugin_version"`
 }
 type uploadArgsReq struct {
-	Appid           string `json:"appid"`
-	Docid           string `json:"docid"`
-	Content         string `json:"content"`
-	Theme           string `json:"theme"`
-	SiyuanVersion   string `json:"version"`
-	Title           string `json:"title"`
-	HideSYVersion   bool   `json:"hide_version"`
-	PluginVersion   string `json:"plugin_version"`
-	ExistLinkCreate bool   `json:"exist_link_create"`
-	PageWide        string `json:"page_wide"`
-	AccessKeyEnable bool   `json:"access_key_enable"`
-	AccessKey       string `json:"access_key"`
+	Appid            string `json:"appid"`
+	Docid            string `json:"docid"`
+	Content          string `json:"content"`
+	Theme            string `json:"theme"`
+	SiyuanVersion    string `json:"version"`
+	Title            string `json:"title"`
+	HideSYVersion    bool   `json:"hide_version"`
+	PluginVersion    string `json:"plugin_version"`
+	ExistLinkCreate  bool   `json:"exist_link_create"`
+	PageWide         string `json:"page_wide"`
+	AccessKeyEnable  bool   `json:"access_key_enable"`
+	AccessKey        string `json:"access_key"`
+	MiniMenu         bool   `json:"mini_menu"`
+	TitleImageHeight string `json:"title_image_height"`
 }
 
 func uploadFileRequest(c *gin.Context) {
@@ -131,6 +135,11 @@ func uploadArgsRequest(c *gin.Context) {
 		c.String(http.StatusOK, res.setErrJson().toString())
 		return
 	}
+	TitleImageHeight, err := strconv.Atoi(data.TitleImageHeight)
+	if err != nil {
+		log.Warnf("题头图高度参数异常，恢复为默认参数")
+		TitleImageHeight = 30
+	}
 
 	access_key_enable := 0
 
@@ -150,9 +159,12 @@ func uploadArgsRequest(c *gin.Context) {
 	} else {
 		log.Info("访问密钥: 关闭")
 	}
+	log.Infof("缩略图导航菜单: %v", data.MiniMenu)
+	log.Warnf("题头图高度: %s", data.TitleImageHeight)
 	log.Infof("标题中隐藏思源版本: %v", data.HideSYVersion)
 	log.Infof("链接存在时重新创建: %v", data.ExistLinkCreate)
-	// 创建资源文件夹，
+
+	// 创建资源文件夹
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
 	tmp_html, err := mkdir_all(data.Appid, data.Docid)
 	if err != nil {
@@ -168,6 +180,9 @@ func uploadArgsRequest(c *gin.Context) {
 			return "   v" + data.SiyuanVersion
 
 		}
+	}
+	if TitleImageHeight >= 0 {
+		setTitleImageHeigt(&data.Content, TitleImageHeight)
 	}
 
 	content := tempate_html
@@ -197,6 +212,15 @@ func uploadArgsRequest(c *gin.Context) {
 		return wide
 
 	}(data.PageWide))
+
+	// 是否使用导航图
+	if data.MiniMenu {
+		content = strings.ReplaceAll(content, "{{ .MiniMenuStyle }}", mini_menu_style)
+		content = strings.ReplaceAll(content, "{{ .MiniMenuScript }}", mini_menu_script)
+	} else {
+		content = strings.ReplaceAll(content, "{{ .MiniMenuStyle }}", "")
+		content = strings.ReplaceAll(content, "{{ .MiniMenuScript }}", "")
+	}
 
 	f, err := os.OpenFile(filepath.Join(tmp_html, "index.htm"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, get_file_permission())
 	if err != nil {
@@ -262,7 +286,28 @@ func uploadArgsRequest(c *gin.Context) {
 	// link 是生成的
 	c.String(http.StatusOK, res.setOK(full_link).toString())
 }
+func setTitleImageHeigt(content *string, height int) {
+	const style string = `height: 30vh;overflow: hidden;`
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(*content))
+	if err != nil {
+		log.Fatal(err)
+	}
+	selection := doc.Find("div[data-type=NodeParagraph]").First()
 
+	if selection.Find("img[alt=\"image\"]").Length() == 1 {
+		log.Infof("发现题头图")
+		node := selection.Nodes[0]
+		// 添加一个新的属性
+		node.Attr = append(node.Attr, html.Attribute{Key: "style", Val: style})
+		// 输出修改后的HTML
+		html, err := doc.Html()
+		if err != nil {
+			log.Fatal(err)
+		}
+		*content = html
+	}
+
+}
 func deleteLinkRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("删除链接")
