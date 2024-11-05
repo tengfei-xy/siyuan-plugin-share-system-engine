@@ -40,7 +40,7 @@ func (r *resStruct) setErrParam() *resStruct {
 }
 func (r *resStruct) setErrURL() *resStruct {
 	r.Err = 5
-	r.Msg = " 错误请求地址"
+	r.Msg = "错误请求地址"
 	r.Data = ""
 	return r
 }

@@ -14,6 +14,7 @@ const tempate_html = `
     <link rel="stylesheet" type="text/css" id="baseStyle" href="stage/build/export/base.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeDefaultStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
     <link rel="stylesheet" type="text/css" id="themeStyle" href="appearance/themes/{{ .Theme }}/theme.css?{{ .Version }}"/>
+
     <title>{{ .Title }}{{ .TitleVersion }}</title>
     {{ .MiniMenuStyle }}
     <style>
@@ -52,6 +53,9 @@ const tempate_html = `
   padding: 2px 8px;
 }.config__panel.svelte-1fh5pey.svelte-1fh5pey.svelte-1fh5pey{height:100%}.config__panel.svelte-1fh5pey>ul.svelte-1fh5pey>li.svelte-1fh5pey{padding-left:1rem}
 
+    </style>
+        <style>
+    {{ .CustomCSS }}
     </style>
 </head>
 <body>
@@ -100,6 +104,7 @@ id="preview">
       })
     });
 </script>
+
 {{ .MiniMenuScript }}
 </body></html>
 `

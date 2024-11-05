@@ -44,6 +44,7 @@ type uploadArgsReq struct {
 	AccessKey        string `json:"access_key"`
 	MiniMenu         bool   `json:"mini_menu"`
 	TitleImageHeight string `json:"title_image_height"`
+	CustomCSS        string `json:"custom_css"`
 }
 
 func uploadFileRequest(c *gin.Context) {
@@ -220,6 +221,9 @@ func uploadArgsRequest(c *gin.Context) {
 	} else {
 		content = strings.ReplaceAll(content, "{{ .MiniMenuStyle }}", "")
 		content = strings.ReplaceAll(content, "{{ .MiniMenuScript }}", "")
+	}
+	if data.CustomCSS != "" {
+		content = strings.ReplaceAll(content, "{{ .CustomCSS }}", data.CustomCSS)
 	}
 
 	f, err := os.OpenFile(filepath.Join(tmp_html, "index.htm"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, get_file_permission())
