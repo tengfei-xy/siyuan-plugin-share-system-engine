@@ -40,6 +40,7 @@ func init_web() {
 	g.POST("/api/upload_args", uploadArgsRequest)
 	g.POST("/api/upload_file", uploadFileRequest)
 	g.POST("/api/getlink", getLinkRequest)
+	g.GET("/api/getlinkall", getLinkAllRequest)
 	g.POST("/api/deletelink", deleteLinkRequest)
 
 	g.POST("/api/key", AccessKeyPOSTRequest)

@@ -41,6 +41,7 @@ type flagStruct struct {
 	config_file string
 	db_file     string
 	version     bool
+	loglevel    int
 }
 
 func (app *appConfig) is_empty() {
@@ -70,6 +71,7 @@ func init_flag() flagStruct {
 	var f flagStruct
 	flag.StringVar(&f.config_file, "c", "config.yaml", "打开配置文件")
 	flag.StringVar(&f.db_file, "d", "", "清空数据并导入SQL数据文件")
+	flag.IntVar(&f.loglevel, "l", log.LEVELINFOINT, fmt.Sprintf("日志等级,%d-%d", log.LEVELFATALINT, log.LEVELDEBUG3INT))
 	flag.BoolVar(&f.version, "v", false, "查看版本号")
 
 	flag.Parse()
@@ -80,6 +82,10 @@ func init_config(flag flagStruct) {
 		fmt.Println(version)
 		os.Exit(0)
 	}
+	log.SetLevelInt(flag.loglevel)
+	_, g := log.GetLevel()
+	fmt.Printf("日志等级:%s\n", g)
+
 	log.Infof("读取配置文件")
 	l := []string{flag.config_file, "/data/config.yaml", "/config.yaml"}
 	for _, f := range l {

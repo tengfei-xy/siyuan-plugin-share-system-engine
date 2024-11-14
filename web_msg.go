@@ -8,6 +8,12 @@ type resStruct struct {
 	Data string `json:"data"`
 }
 
+type resArray struct {
+	Err  int         `json:"err"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
+}
+
 func (r *resStruct) setOK(str string) *resStruct {
 	r.Err = ERR_CODE_OK
 	r.Msg = ERR_MSG_OK
@@ -45,13 +51,20 @@ func (r *resStruct) setErrURL() *resStruct {
 	return r
 }
 
-// func resOK() resStruct{
-// 	return resStruct{
-// 		Err : 0,
-// 		Msg : "处理完成",
-// 		Data : "",
-// 	}
-// }
+func msgOK(d interface{}) resArray {
+	return resArray{
+		Err:  ERR_CODE_OK,
+		Msg:  ERR_MSG_OK,
+		Data: d,
+	}
+}
+func msgInternalSystemErr() resArray {
+	return resArray{
+		Err:  ERR_CODE_SYSTEM,
+		Msg:  ERR_MSG_SYSTEM,
+		Data: nil,
+	}
+}
 
 // json to string
 func (r *resStruct) toString() string {

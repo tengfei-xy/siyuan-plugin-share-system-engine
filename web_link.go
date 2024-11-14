@@ -411,3 +411,63 @@ func getLinkRequest(c *gin.Context) {
 	// 返回数据
 	c.String(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", app.ShareBaseLink, link)).toString())
 }
+func getLinkAllRequest(c *gin.Context) {
+	var res resStruct
+
+	appid := c.Query("appid")
+	log.Info("-----------------")
+	log.Info("获取所有链接")
+	log.Infof("IP: %s", c.ClientIP())
+	log.Infof("appid: %s", appid)
+	if appid == "" {
+		c.String(http.StatusOK, res.setErrParam().toString())
+		return
+	}
+
+	type data struct {
+		Link            string `json:"link"`
+		Title           string `json:"title"`
+		DocID           string `json:"docid"`
+		Enable          bool   `json:"enable"`
+		AccessKey       string `json:"access_key"`
+		AccessKeyEnable int    `json:"access_key_enable"`
+	}
+
+	var length int
+	if err := app.db.QueryRow("select COUNT(*) from share where appid=?", appid).Scan(&length); err != nil {
+		log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalSystemErr())
+		return
+	}
+	if length == 0 {
+		d := make([]data, 0)
+
+		log.Warnf("未查询到记录 appid=%s", appid)
+		c.JSON(http.StatusOK, msgOK(d))
+		return
+	}
+
+	d := make([]data, length)
+
+	ret, err := app.db.Query("select docid,title,link,access_key,access_key_enable from share where appid=?", appid)
+	if err != nil {
+		log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalSystemErr())
+		return
+	}
+	log.Infof("查询到%d条记录", length)
+	var i int = 0
+	for ret.Next() {
+		err := ret.Scan(&d[i].DocID, &d[i].Title, &d[i].Link, &d[i].AccessKey, &d[i].AccessKeyEnable)
+		if err != nil {
+			log.Error(err)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalSystemErr())
+			return
+		}
+		log.Debugf("%s", d[i].DocID)
+
+		d[i].Link = fmt.Sprintf("%s/%s", app.ShareBaseLink, d[i].Link)
+		i++
+	}
+	c.JSON(http.StatusOK, msgOK(d))
+}

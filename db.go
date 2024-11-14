@@ -110,7 +110,6 @@ func dbTableGET() (string, error) {
 	ret, err := app.db.Query("select id,appid,docid,title,link,update_time,expire_time,count,access_key,access_key_enable from share")
 	if err != nil {
 		return "", err
-
 	}
 	var id, count, access_key_enable int
 	var appid, docid, title, link, access_key string
