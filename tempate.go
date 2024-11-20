@@ -118,15 +118,12 @@ const access_key_html = `
 
 <script>
  function getAccessKey() {
-    let accessKey = prompt("请输入访问码：");
-    if (accessKey) {
-            var currentUrl = window.location.href;
-            var newUrl = currentUrl + '?access_key=' + encodeURIComponent(accessKey);
-            window.location.href = newUrl;
-    } else {
-      // 如果用户没有输入访问码，则再次调用 getAccessKey 函数
+    let accessKey = prompt("请输入访问码：\n Please enter access code:");
+    if (!accessKey) {
       getAccessKey(); 
-    }
+      return;
+    } 
+    window.location.href =  window.location.origin + window.location.pathname + '?access_key=' + encodeURIComponent(accessKey);
   }
   getAccessKey(); 
 </script>

@@ -291,7 +291,7 @@ func uploadArgsRequest(c *gin.Context) {
 	c.String(http.StatusOK, res.setOK(full_link).toString())
 }
 func setTitleImageHeigt(content *string, height int) {
-	const style string = `height: 30vh;overflow: hidden;`
+	style := fmt.Sprintf(`height: %dvh;overflow: hidden;`, height)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(*content))
 	if err != nil {
 		log.Fatal(err)
