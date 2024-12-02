@@ -62,8 +62,11 @@ const tempate_html = `
 <div class="protyle-wysiwyg protyle-wysiwyg--attr"
 style="max-width: {{ .PageWide }};margin: 0 auto;"
 id="preview">
-<div id="toc-container"> </div>
-
+<div>
+  <div id="toc-container">
+  </div>
+  <button id="toggle-button"></button>
+</div>
 {{ .Content }}
 <script src="appearance/icons/material/icon.js?{{ .Version }}"></script>
 <script src="stage/build/export/protyle-method.js?{{ .Version }}"></script>
@@ -178,6 +181,22 @@ tocLinks.forEach(link => {
 
   });
 });
+ var tocVisible = true; // 菜单初始状态为可见
+
+document.getElementById('toggle-button').onclick = function () {
+  var tocContainer = document.getElementById('toc-container');
+  var toggleButton = document.getElementById('toggle-button');
+  if (tocVisible) {
+    tocContainer.style.transform = 'translateY(-50%) translateX(-200px)';
+    toggleButton.style.borderWidth = '10px 0 10px 10px'; // 修改箭头方向
+    toggleButton.style.borderColor = 'transparent transparent transparent #007bff'; // 修改箭头颜色
+  } else {
+    tocContainer.style.transform = 'translateY(-50%) translateX(0)';
+    toggleButton.style.borderWidth = '10px 10px 10px 0';
+    toggleButton.style.borderColor = 'transparent #007bff transparent transparent'; // 还原箭头颜色
+  }
+  tocVisible = !tocVisible; // 切换菜单状态
+}
 </script>
 `
 const mini_menu_style = `
@@ -210,5 +229,19 @@ const mini_menu_style = `
 #toc-container li a:hover {
   color: #333;
 }
-
+#toggle-button {
+  position: fixed;
+  top: 50%;
+  width: 0;
+  height: 0;
+  left:10px;
+  border-style: solid;
+  border-width: 10px 10px 10px 0;
+  border-color: transparent #007bff transparent transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: left 0.3s ease, transform 0.3s ease;
+  background: transparent;
+  z-index: 101;
+}
 </style>`
