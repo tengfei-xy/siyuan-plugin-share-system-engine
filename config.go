@@ -90,6 +90,7 @@ func init_config(flag flagStruct) {
 	l := []string{flag.config_file, "/data/config.yaml", "/config.yaml"}
 	for _, f := range l {
 		if !tools.FileExist(f) {
+			log.Warnf("配置文件不存在 路径:%s", f)
 			continue
 		}
 		log.Infof("配置文件: %s", flag.config_file)
@@ -106,6 +107,8 @@ func init_config(flag flagStruct) {
 		log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
 		return
 	}
+	log.Info("使用默认配置")
+
 }
 func init_env() {
 	if v := os.Getenv("SPSS_LISTEN"); v != "" {

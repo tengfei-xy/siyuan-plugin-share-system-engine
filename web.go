@@ -61,8 +61,7 @@ func init_web() {
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
 	if app.Web.SSLEnable {
 		log.Infof("启动https服务器，监听地址: %s", app.Basic.ListenPort)
-		err := g.RunTLS(app.Basic.ListenPort, app.Web.SSLCERT, app.Web.SSLKEY)
-		if err != nil {
+		if err := g.RunTLS(app.Basic.ListenPort, app.Web.SSLCERT, app.Web.SSLKEY); err != nil {
 			log.Fatal(err)
 		}
 	} else {
@@ -99,6 +98,8 @@ func rootRequest(c *gin.Context) {
 	row := app.db.QueryRow(`select appid,docid,status from share where link=?`, id)
 	var appid, docid string
 	var status int
+
+	// 扫描数据库
 	if err := row.Scan(&appid, &docid, &status); err != nil {
 		if err == sql.ErrNoRows {
 			c.String(http.StatusNotFound, res.setNoShare().toMsg())
@@ -108,6 +109,8 @@ func rootRequest(c *gin.Context) {
 			return
 		}
 	}
+
+	// 如果数据库中设置了禁止访问
 	if status == STATUS_LINK_DISABLE {
 		c.String(http.StatusNotFound, res.setNoShare().toMsg())
 		return

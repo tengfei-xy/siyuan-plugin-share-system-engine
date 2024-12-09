@@ -187,7 +187,7 @@ document.getElementById('toggle-button').onclick = function () {
   var tocContainer = document.getElementById('toc-container');
   var toggleButton = document.getElementById('toggle-button');
   if (tocVisible) {
-    tocContainer.style.transform = 'translateY(-50%) translateX(-200px)';
+    tocContainer.style.transform = 'translateY(-50%) translateX(-400%)';
     toggleButton.style.borderWidth = '10px 0 10px 10px'; // 修改箭头方向
     toggleButton.style.borderColor = 'transparent transparent transparent #007bff'; // 修改箭头颜色
   } else {

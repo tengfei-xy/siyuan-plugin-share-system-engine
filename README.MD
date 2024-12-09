@@ -14,7 +14,7 @@
    ```text
    git clone git@github.com:tengfei-xy/siyuan-plugin-share-system-engine.git
    ```
-2. 确保存在go 1.21.4版本，安装[参考文档](https://www.wolai.com/tengfei-xy/bjUcRE7tSsscWqpszDvbxx "参考文档")
+2. 确保存在go 1.21.4或更高的版本，安装[参考文档](https://www.wolai.com/tengfei-xy/bjUcRE7tSsscWqpszDvbxx "参考文档")
 3. 进入项目文件夹并开始编译
 
    务必设置`CGO_ENABLED`=1
@@ -23,9 +23,9 @@
    CGO_ENABLED=1 go build -o spss_engine .
    ```
 
-## 二、部署方式（从0部署）
+# 三、部署方式（从0部署）
 
-## 2.1 本地二进制运行
+## 3.1 本地二进制运行
 
 注：不提供32位系统的二进制文件和windows arm。
 
@@ -39,14 +39,14 @@
    ```
    debian / ubuntu
    ```yaml
-   sudo apt instal musl
+   sudo apt install musl
    ```
 4. 运行启动
    ```bash
    ./spss_engine -c config.yaml
    ```
 
-## 2.2 docker
+## 3.2 docker
 
 - 一键部署
   注： `-p`的容器端口需要和`SPSS_LISTEN`变量的端口保持一直。作为使用者，需要修改的是-p的宿主端口和`SPSS_SHARE_LINK`变量的端口（如有需要）
@@ -94,7 +94,7 @@
      docker run -d -p 25934:25934 -v ./:/data -v /etc/localtime:/etc/localtime --restart=always --name=spss_engine spss_engine
      ```
 
-# 三、升级（从旧版本1.x.x升级）
+# 四、升级（从旧版本1.x.x升级）
 
 1. 从mysql导出sql，参考语句
    ```bash
@@ -134,7 +134,7 @@
   done
   ```
 
-# 四、API
+# 五、API
 
 说明：API是用来查看数据库的记录，使用API之前，需要确保API接口在配置文件上被启用。如果包含了用户和密码，在请求中加入`Authorization: Basic base64(用户名:密码)`（[参考文档](https://apifox.com/help/auth/basic-auth/)）
 
