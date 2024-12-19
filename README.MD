@@ -80,16 +80,11 @@
   --name=spss_engine \
   tengfeixy/spss_engine:2.3.0
   ```
-- 手动本地构建镜像
-  1. 构建/拉取镜像
-     - 本地构建镜像,[下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
-       ```bash
-       docker build --no-cache=true -t spss_engine .
-       ```
-     - DockerHub拉取镜像
-       ```bash
-       docker build -t spss_engine .
-       ```
+- 本地构建镜像
+  1. 构建/拉取镜像，[下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
+      ```bash
+      docker build --no-cache=true -t spss_engine .
+      ```
   2. 在当前目录创建[config.yaml](https://raw.githubusercontent.com/tengfei-xy/siyuan-plugin-share-system-engine/refs/heads/main/config.yaml "config.yaml")，并修改
   3. 运行容器
      其他环境变量参数参考上文
