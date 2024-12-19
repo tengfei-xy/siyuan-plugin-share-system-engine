@@ -48,9 +48,11 @@
 
 ## 3.2 docker
 
-- 一键部署
-  注： `-p`的容器端口需要和`SPSS_LISTEN`变量的端口保持一直。作为使用者，需要修改的是-p的宿主端口和`SPSS_SHARE_LINK`变量的端口（如有需要）
+- 一键部署 / 从docker hub中拉取并运行容器
   
+  注： `-p`的容器端口需要和`SPSS_LISTEN`变量的端口保持一直。作为容器的管理者，需要修改的是-p的宿主端口和`SPSS_SHARE_LINK`变量
+  注： 对于SPSS_SHARE_LINK变量表示，生成的链接将以此参数作为开头。这个端口不是容器的端口，是最终外部网络来访问容器的端口。示例：如果你在NAS中或其他容器中，假如你需要让外网来访问2233端口，而容器本身使用了25934端口，那么这个参数的端口依然那是2233。
+
   ```bash
   # IP访问 / http访问 / 关闭API访问密码保护
   docker run -d -p 25934:25934 -v ./:/data \
@@ -78,7 +80,7 @@
   --name=spss_engine \
   tengfeixy/spss_engine:2.3.0
   ```
-- 使用配置文件
+- 手动本地构建镜像
   1. 构建/拉取镜像
      - 本地构建镜像,[下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
        ```bash
@@ -90,11 +92,21 @@
        ```
   2. 在当前目录创建[config.yaml](https://raw.githubusercontent.com/tengfei-xy/siyuan-plugin-share-system-engine/refs/heads/main/config.yaml "config.yaml")，并修改
   3. 运行容器
+     其他环境变量参数参考上文
      ```bash
      docker run -d -p 25934:25934 -v ./:/data -v /etc/localtime:/etc/localtime --restart=always --name=spss_engine spss_engine
      ```
 
-# 四、升级（从旧版本1.x.x升级）
+# 四、排错思路
+
+1. 打开思源笔记的分享插件。（注：每次打开此插件的设置页面，都会访问一次服务器，如果访问失败或访问超市则消息弹窗提示）
+2. 根据分享插件的服务器地址，测试此端口在本机是否能访问。如果在浏览器中使用思源，要在插件中勾选“从浏览器访问”
+3. 如果在插件服务器在NAS中，应该使用NAS的IP和容器映射的外部端口。
+4. 在本机的浏览器中直接访问插件设置里的服务器地址，如果返回404 No found，表示通信正常，此时可以使用这个服务器端。
+5. 在插件中，执行创建分享后，获得的分享链接的ip、端口务必需要和分享服务期的ip、端口相同。如果不相同，需要修改配置文件里的shareBaseLink或容器变量SPSS_SHARE_LINK。
+6. 根据插件设置页面底部的联系方式找作者，使用向日葵远程debug。
+
+# 五、升级（从旧版本1.x.x升级）
 
 1. 从mysql导出sql，参考语句
    ```bash
@@ -134,7 +146,7 @@
   done
   ```
 
-# 五、API
+# 六、API
 
 说明：API是用来查看数据库的记录，使用API之前，需要确保API接口在配置文件上被启用。如果包含了用户和密码，在请求中加入`Authorization: Basic base64(用户名:密码)`（[参考文档](https://apifox.com/help/auth/basic-auth/)）
 
