@@ -210,6 +210,8 @@ const mini_menu_style = `
   background-color: #fff;
   border-radius: 5px;
   z-index: 100; /* 确保菜单在其他元素上方 */
+  height: 60%;
+  overflow: auto;
 }
 
 #toc-container ul {

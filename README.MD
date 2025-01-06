@@ -62,7 +62,7 @@
   -e SPSS_SHARE_LINK="http://127.0.0.1:25934" \
   -e SPSS_WEB_FILE_MAX=100 \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.3.0
+  tengfeixy/spss_engine:2.3.1
 
 
   # https访问 / 启动API访问密码保护
@@ -78,7 +78,7 @@
   -e SPSS_DB_API=true \
   -e SPSS_DB_AUTH=username:password \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.3.0
+  tengfeixy/spss_engine:2.3.1
   ```
 - 本地构建镜像
   1. 构建/拉取镜像，[下载Release](https://github.com/tengfei-xy/siyuan-plugin-share-system-engine/releases "下载Release")并解压
