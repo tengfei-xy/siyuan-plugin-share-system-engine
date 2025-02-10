@@ -57,7 +57,7 @@
   # IP访问 / http访问 / 关闭API访问密码保护
   docker run -d -p 25934:25934 -v ./:/data \
   -v /etc/localtime:/etc/localtime --restart=always \
-  -e SPSS_LISTEN=127.0.0.1:25934 \
+  -e SPSS_LISTEN=0.0.0.0:25934 \
   -e SPSS_SAVE_PATH=/data \
   -e SPSS_SHARE_LINK="http://127.0.0.1:25934" \
   -e SPSS_WEB_FILE_MAX=100 \
