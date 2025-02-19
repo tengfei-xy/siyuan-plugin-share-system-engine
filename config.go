@@ -78,6 +78,7 @@ func init_flag() flagStruct {
 	return f
 }
 func init_config(flag flagStruct) {
+	var ok bool
 	if flag.version {
 		fmt.Println(version)
 		os.Exit(0)
@@ -102,7 +103,10 @@ func init_config(flag flagStruct) {
 		if err != nil {
 			panic(err)
 		}
-
+		app.Basic.ShareBaseLink, ok = check_url(app.Basic.ShareBaseLink)
+		if !ok {
+			log.Fatal("ShareBaseLink格式错误,请检查是否以http://或https://开头")
+		}
 		log.Infof("共享链接: %s", app.Basic.ShareBaseLink)
 		log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
 		return
@@ -111,6 +115,7 @@ func init_config(flag flagStruct) {
 
 }
 func init_env() {
+	var ok bool
 	if v := os.Getenv("SPSS_LISTEN"); v != "" {
 		log.Infof("SPSS_LISTEN=%s", v)
 		app.ListenPort = v
@@ -123,7 +128,10 @@ func init_env() {
 
 	if v := os.Getenv("SPSS_SHARE_LINK"); v != "" {
 		log.Infof("SPSS_SHARE_LINK=%s", v)
-		app.Basic.ShareBaseLink = v
+		app.Basic.ShareBaseLink, ok = check_url(v)
+		if !ok {
+			log.Fatal("SPSS_SHARE_LINK变量格式错误,请检查是否以http://或https://开头")
+		}
 	}
 	if v := os.Getenv("SPSS_WEB_FILE_MAX"); v != "" {
 		i, err := strconv.Atoi(v)
@@ -167,4 +175,11 @@ func init_env() {
 		app.SQL.SYSFilename = v
 	}
 	app.is_empty()
+}
+func check_url(url string) (string, bool) {
+	url = strings.Trim(url, `"`)
+	url = strings.Trim(url, `'`)
+	url = strings.Trim(url, `“`)
+	url = strings.Trim(url, `”`)
+	return url, strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://")
 }
