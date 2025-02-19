@@ -59,7 +59,7 @@
   -v /etc/localtime:/etc/localtime --restart=always \
   -e SPSS_LISTEN=0.0.0.0:25934 \
   -e SPSS_SAVE_PATH=/data \
-  -e SPSS_SHARE_LINK="http://127.0.0.1:25934" \
+  -e SPSS_SHARE_LINK=http://127.0.0.1:25934 \
   -e SPSS_WEB_FILE_MAX=100 \
   --name=spss_engine \
   tengfeixy/spss_engine:2.3.2
@@ -70,7 +70,7 @@
   -v /etc/localtime:/etc/localtime --restart=always \
   -e SPSS_LISTEN=0.0.0.0:25934 \
   -e SPSS_SAVE_PATH=/data \
-  -e SPSS_SHARE_LINK="https://www.example.com:25934" \
+  -e SPSS_SHARE_LINK=https://www.example.com:25934 \
   -e SPSS_WEB_FILE_MAX=100 \
   -e SPSS_WEB_SSL=true \
   -e SPSS_WEB_SSL_CERT=./cert.pem \
