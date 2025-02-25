@@ -53,9 +53,8 @@ func init_web() {
 	g.GET("/:id", linkRequest)
 	g.GET("/", rootRequest)
 
-	g.OPTIONS("/api/v2/link", v2PostLinkRequest)
-	g.OPTIONS("/api/v2/home_page", v2PostHomePageRequest)
-
+	g.OPTIONS("/api/v2/link", optionRequest)
+	g.OPTIONS("/api/v2/home_page", optionRequest)
 	g.OPTIONS("/api/getlink", optionRequest)
 	g.OPTIONS("/api/upload_args", optionRequest)
 	g.OPTIONS("/api/upload_file", optionRequest)
@@ -64,8 +63,8 @@ func init_web() {
 	g.OPTIONS("/api/key", optionRequest)
 	g.OPTIONS("/html/:appid/:docid/*filepath", optionRequest)
 	g.OPTIONS("/:id", optionRequest)
-	g.OPTIONS("/api/info", infoRequest)
-	g.OPTIONS("/", rootRequest)
+	g.OPTIONS("/api/info", optionRequest)
+	g.OPTIONS("/", optionRequest)
 
 	g.MaxMultipartMemory = app.Web.FileMaxMB << 20 // 100 MiB
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
