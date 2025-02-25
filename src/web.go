@@ -39,14 +39,12 @@ func init_web() {
 	g.POST("/api/v2/link", v2PostLinkRequest)
 	g.POST("/api/v2/home_page", v2PostHomePageRequest)
 	g.DELETE("/api/v2/home_page", v2DeleteHomePageRequest)
-
 	g.POST("/api/upload_args", uploadArgsRequest)
 	g.POST("/api/upload_file", uploadFileRequest)
 	g.POST("/api/getlink", getLinkRequest)
 	g.GET("/api/getlinkall", getLinkAllRequest)
 	g.POST("/api/deletelink", deleteLinkRequest)
 	g.GET("/api/info", infoRequest)
-
 	g.POST("/api/key", AccessKeyPOSTRequest)
 	g.GET("/api/key", AccessKeyGetRequest)
 	g.GET("/html/:appid/:docid/*filepath", htmlRequest)
@@ -87,7 +85,7 @@ func optionRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("原始: %s", c.Request.Header.Get("origin"))
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "content-type, cros-status")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
 }
