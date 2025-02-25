@@ -1,11 +1,8 @@
 before:
   hooks:
-    # You may remove this if you don't use go modules.
-    - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
 builds:
-  - 
+  - main: ./
+    dir: src
     id: "windows"
     env:
       - CGO_ENABLED=1
@@ -21,7 +18,8 @@ builds:
     gcflags:
       - all=-trimpath=.
 
-  - 
+  - main: ./
+    dir: src
     id: "macos"
     env:
       - CGO_ENABLED=1
@@ -35,7 +33,8 @@ builds:
     binary: "spss_engine"
     gcflags:
       - all=-trimpath=.
-  -
+  - main: ./
+    dir: src
     id: "linux"
     env:
       - CC=x86_64-linux-musl-gcc
@@ -50,7 +49,8 @@ builds:
     gcflags:
       - all=-trimpath=.  
 
-  -
+  - main: ./
+    dir: src
     id: "linux-arm64"
     env:
       - CC=aarch64-linux-musl-gcc
