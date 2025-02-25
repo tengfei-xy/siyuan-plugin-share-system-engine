@@ -112,11 +112,6 @@ func init_config(flag flagStruct) {
 
 		app.Basic.isPublicServer = app.Basic.PublicServer == "true" || app.Basic.PublicServer == "TRUE" || app.Basic.PublicServer == "1"
 
-		if app.Basic.isPublicServer {
-			log.Info("公共服务器模式（不支持首页功能）")
-		} else {
-			log.Info("运行个人服务器模式（支持首页功能）")
-		}
 		log.Infof("共享链接: %s", app.Basic.ShareBaseLink)
 		log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
 		return
@@ -188,6 +183,12 @@ func init_env() {
 		if v == "true" || v == "TRUE" || v == "1" {
 			app.Basic.isPublicServer = true
 		}
+	}
+
+	if app.Basic.isPublicServer {
+		log.Info("公共服务器模式（不支持首页功能）")
+	} else {
+		log.Info("运行个人服务器模式（支持首页功能）")
 	}
 	app.is_empty()
 }
