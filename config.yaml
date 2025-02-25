@@ -13,6 +13,10 @@ basic:
   # SPSS_SHARE_LINK
   shareBaseLink: "http://127.0.0.1:25934"
   
+  # 在公共模式下，不可以使用首页功能
+  # 在个人模式下，可以使用首页功能
+  # 其他功能均相同，，默认参数为false，即为个人模式
+  publicServer: false
 web:
   # 从插件上传数据文件的大小限制，单位MB
   # SPSS_WEB_FILE_MAX
