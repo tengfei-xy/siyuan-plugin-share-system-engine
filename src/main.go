@@ -8,7 +8,7 @@ import (
 
 var app appConfig
 
-const version string = "2.4.1"
+const version string = "2.4.2"
 
 func prompt() {
 	fmt.Printf(`
