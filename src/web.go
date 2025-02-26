@@ -58,10 +58,8 @@ func init_web() {
 	g.OPTIONS("/api/upload_file", optionRequest)
 	g.OPTIONS("/api/deletelink", optionRequest)
 	g.OPTIONS("/api/url/:url", optionRequest)
-	g.OPTIONS("/api/key", optionRequest)
 	g.OPTIONS("/html/:appid/:docid/*filepath", optionRequest)
 	g.OPTIONS("/:id", optionRequest)
-	g.OPTIONS("/api/info", optionRequest)
 	g.OPTIONS("/", optionRequest)
 
 	g.MaxMultipartMemory = app.Web.FileMaxMB << 20 // 100 MiB
@@ -79,10 +77,15 @@ func init_web() {
 		}
 	}
 }
+func optionGetRequest(c *gin.Context) {
+	log.Info("-----------------")
+	log.Info("预检(GET)")
+	log.Infof("原始: %s", c.Request.Header.Get("origin"))
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+}
 func optionRequest(c *gin.Context) {
 	log.Info("-----------------")
 	log.Info("预检")
-	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("原始: %s", c.Request.Header.Get("origin"))
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT")
@@ -184,6 +187,9 @@ func infoRequest(c *gin.Context) {
 		IsPublicServer bool   `json:"is_public_server"`
 	}
 	var res Resquest
+
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	res.IsPublicServer = app.Basic.isPublicServer
 	res.Version = version
 	c.JSON(http.StatusOK, msgOK(res))

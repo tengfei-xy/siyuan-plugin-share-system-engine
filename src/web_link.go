@@ -490,6 +490,8 @@ func getLinkRequest(c *gin.Context) {
 func getLinkAllRequest(c *gin.Context) {
 	var res resStruct
 
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	appid := c.Query("appid")
 	log.Info("-----------------")
 	log.Info("获取所有链接")

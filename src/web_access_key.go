@@ -97,6 +97,8 @@ func AccessKeyGetRequest(c *gin.Context) {
 			AccessKeyEnable: false,
 		},
 	}
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
 	log.Info("-----------------")
 	log.Infof("获取访问密码")
 
