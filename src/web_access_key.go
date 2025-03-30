@@ -19,6 +19,7 @@ func (ak accessKeyData) startup() string {
 	log.Infof("启动访问密码")
 	log.Infof("Appid:%s", ak.Appid)
 	log.Infof("Docid:%s", ak.Docid)
+	
 	if ak.AccessKey == "" {
 		ak.AccessKey = createRand(4)
 		log.Infof("AccessKey:%s (系统指定)", ak.AccessKey)
@@ -54,7 +55,9 @@ func (ak accessKeyData) close() string {
 }
 
 func AccessKeyPOSTRequest(c *gin.Context) {
-
+    
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	
 	var res resStruct
 
 	var data accessKeyData

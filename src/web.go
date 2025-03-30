@@ -57,6 +57,7 @@ func init_web() {
 	g.OPTIONS("/api/upload_args", optionRequest)
 	g.OPTIONS("/api/upload_file", optionRequest)
 	g.OPTIONS("/api/deletelink", optionRequest)
+	g.OPTIONS("/api/key", optionRequest)
 	g.OPTIONS("/api/url/:url", optionRequest)
 	g.OPTIONS("/html/:appid/:docid/*filepath", optionRequest)
 	g.OPTIONS("/:id", optionRequest)
@@ -88,7 +89,7 @@ func optionRequest(c *gin.Context) {
 	log.Info("预检")
 	log.Infof("原始: %s", c.Request.Header.Get("origin"))
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT")
+	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT,OPTIONS")
 	c.Writer.Header().Set("Access-Control-Allow-Headers", "content-type, cros-status")
 	c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
 }
