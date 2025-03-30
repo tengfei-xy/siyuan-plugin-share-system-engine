@@ -57,6 +57,7 @@ func init_web() {
 	g.OPTIONS("/api/upload_args", optionRequest)
 	g.OPTIONS("/api/upload_file", optionRequest)
 	g.OPTIONS("/api/deletelink", optionRequest)
+	g.OPTIONS("/api/key", optionRequest)
 	g.OPTIONS("/api/url/:url", optionRequest)
 	g.OPTIONS("/html/:appid/:docid/*filepath", optionRequest)
 	g.OPTIONS("/:id", optionRequest)

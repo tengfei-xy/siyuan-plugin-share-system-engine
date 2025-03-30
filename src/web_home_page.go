@@ -8,7 +8,11 @@ import (
 )
 
 func v2PostHomePageRequest(c *gin.Context) {
-
+    cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+	
 	type request struct {
 		Appid         string `json:"appid"`
 		Docid         string `json:"docid"`
@@ -65,6 +69,12 @@ func v2PostHomePageRequest(c *gin.Context) {
 
 }
 func v2DeleteHomePageRequest(c *gin.Context) {
+    
+    cros_status := c.Request.Header.Get("cros-status")
+	if cros_status == "true" {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	}
+	
 	var err error
 	type resquest struct {
 		Link string `json:"link"`
