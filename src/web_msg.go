@@ -13,12 +13,12 @@ type resquest struct {
 	Data interface{} `json:"data"`
 }
 
-func ok(c *gin.Context) {
-	c.JSON(http.StatusOK, resquest{
-		Err: 0,
-		Msg: "ok",
-	})
-}
+//	func ok(c *gin.Context) {
+//		c.JSON(http.StatusOK, resquest{
+//			Err: 0,
+//			Msg: "ok",
+//		})
+//	}
 func okData(c *gin.Context, data any) {
 	c.JSON(http.StatusOK, resquest{
 		Err:  0,
@@ -123,6 +123,6 @@ func (r *resStruct) toString() string {
 }
 
 // json to msg
-func (r *resStruct) toMsg() string {
-	return r.Msg
-}
+// func (r *resStruct) toMsg() string {
+// 	return r.Msg
+// }
