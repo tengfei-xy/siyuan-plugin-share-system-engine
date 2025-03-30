@@ -35,6 +35,7 @@ func init_web() {
 	} else {
 		log.Infof("关闭API的DB接口")
 	}
+	g.Use(cors())
 
 	g.POST("/api/v2/link", v2PostLinkRequest)
 	g.POST("/api/v2/home_page", v2PostHomePageRequest)
@@ -51,19 +52,8 @@ func init_web() {
 	g.GET("/:id", linkRequest)
 	g.GET("/", rootRequest)
 
-	g.OPTIONS("/api/v2/link", optionRequest)
-	g.OPTIONS("/api/v2/home_page", optionRequest)
-	g.OPTIONS("/api/getlink", optionRequest)
-	g.OPTIONS("/api/upload_args", optionRequest)
-	g.OPTIONS("/api/upload_file", optionRequest)
-	g.OPTIONS("/api/deletelink", optionRequest)
-	g.OPTIONS("/api/key", optionRequest)
-	g.OPTIONS("/api/url/:url", optionRequest)
-	g.OPTIONS("/html/:appid/:docid/*filepath", optionRequest)
-	g.OPTIONS("/:id", optionRequest)
-	g.OPTIONS("/", optionRequest)
-
 	g.MaxMultipartMemory = app.Web.FileMaxMB << 20 // 100 MiB
+
 	g.Use(gzip.Gzip(gzip.DefaultCompression))
 	if app.Web.SSLEnable {
 		log.Infof("启动https服务器，监听地址: %s", app.Basic.ListenPort)
@@ -78,21 +68,27 @@ func init_web() {
 		}
 	}
 }
-func optionGetRequest(c *gin.Context) {
-	log.Info("-----------------")
-	log.Info("预检(GET)")
-	log.Infof("原始: %s", c.Request.Header.Get("origin"))
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+
+func cors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Cookie, cros-status")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+		if c.Request.Method == "OPTIONS" {
+			log.Info("-----------------")
+			log.Info("预检")
+			log.Infof("原始: %s", c.Request.Header.Get("origin"))
+			c.Status(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
+	}
 }
-func optionRequest(c *gin.Context) {
-	log.Info("-----------------")
-	log.Info("预检")
-	log.Infof("原始: %s", c.Request.Header.Get("origin"))
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT,OPTIONS")
-	c.Writer.Header().Set("Access-Control-Allow-Headers", "content-type, cros-status")
-	c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
-}
+
 func linkRequest(c *gin.Context) {
 	id := c.Params.ByName("id")
 
