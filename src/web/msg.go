@@ -1,8 +1,9 @@
-package main
+package web
 
 import (
 	"encoding/json"
 	"net/http"
+	"sys"
 
 	"github.com/gin-gonic/gin"
 )
@@ -63,8 +64,8 @@ type resArray struct {
 }
 
 func (r *resStruct) setOK(str string) *resStruct {
-	r.Err = ERR_CODE_OK
-	r.Msg = ERR_MSG_OK
+	r.Err = sys.ERR_CODE_OK
+	r.Msg = sys.ERR_MSG_OK
 	r.Data = str
 	return r
 }
@@ -75,14 +76,14 @@ func (r *resStruct) setErrJson() *resStruct {
 	return r
 }
 func (r *resStruct) setErrSystem() *resStruct {
-	r.Err = ERR_CODE_SYSTEM
-	r.Msg = ERR_MSG_SYSTEM
+	r.Err = sys.ERR_CODE_SYSTEM
+	r.Msg = sys.ERR_MSG_SYSTEM
 	r.Data = ""
 	return r
 }
 func (r *resStruct) setErrParam() *resStruct {
-	r.Err = ERR_CODE_PARAM
-	r.Msg = ERR_MSG_PARAM
+	r.Err = sys.ERR_CODE_PARAM
+	r.Msg = sys.ERR_MSG_PARAM
 	r.Data = ""
 	return r
 }
@@ -100,15 +101,15 @@ func (r *resStruct) setNoPage() *resStruct {
 }
 func msgOK(d interface{}) resArray {
 	return resArray{
-		Err:  ERR_CODE_OK,
-		Msg:  ERR_MSG_OK,
+		Err:  sys.ERR_CODE_OK,
+		Msg:  sys.ERR_MSG_OK,
 		Data: d,
 	}
 }
 func msgInternalSystemErr() resArray {
 	return resArray{
-		Err:  ERR_CODE_SYSTEM,
-		Msg:  ERR_MSG_SYSTEM,
+		Err:  sys.ERR_CODE_SYSTEM,
+		Msg:  sys.ERR_MSG_SYSTEM,
 		Data: nil,
 	}
 }

@@ -1,7 +1,6 @@
-package main
+package sys
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"os"
@@ -13,18 +12,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type appConfig struct {
+type Config struct {
 	Basic `yaml:"basic"`
 	Web   `yaml:"web"`
 	SQL   `yaml:"sql"`
-	db    *sql.DB
 }
 type Basic struct {
 	ListenPort     string `yaml:"listen"`
 	SavePath       string `yaml:"savePath"`
 	ShareBaseLink  string `yaml:"shareBaseLink"`
 	PublicServer   string `yaml:"publicServer"`
-	isPublicServer bool
+	IsPublicServer bool   `yaml:"-"`
+	Version        string `yaml:"-"`
 }
 type Web struct {
 	FileMaxMB int64  `yaml:"fileMaxMB"`
@@ -33,10 +32,11 @@ type Web struct {
 	SSLKEY    string `yaml:"sslKEY"`
 }
 type SQL struct {
-	APIEnable   bool   `yaml:"apiEnable"`
-	Username    string `yaml:"username"`
-	Password    string `yaml:"password"`
-	SYSFilename string `yaml:"sysFilename"`
+	APIEnable      bool   `yaml:"apiEnable"`
+	Username       string `yaml:"username"`
+	Password       string `yaml:"password"`
+	SYSFilename    string `yaml:"sysFilename"`
+	ImportFilename string `yaml:"-"`
 }
 
 type flagStruct struct {
@@ -46,7 +46,7 @@ type flagStruct struct {
 	loglevel    int
 }
 
-func (app *appConfig) is_empty() {
+func (app *Config) is_empty() {
 	if app.ListenPort == "" {
 		app.ListenPort = "0.0.0.0:25934"
 		log.Infof("监听端口使用强制参数:%s", app.ListenPort)
@@ -77,17 +77,22 @@ func init_flag() flagStruct {
 	flag.BoolVar(&f.version, "v", false, "查看版本号")
 
 	flag.Parse()
+
 	return f
 }
-func init_config(flag flagStruct) {
+func InitConfig(version string) Config {
 	var ok bool
+	flag := init_flag()
+
 	if flag.version {
 		fmt.Println(version)
 		os.Exit(0)
 	}
+
 	log.SetLevelInt(flag.loglevel)
 	_, g := log.GetLevel()
 	fmt.Printf("日志等级:%s\n", g)
+	var app Config
 
 	log.Infof("读取配置文件")
 	l := []string{flag.config_file, "/data/config.yaml", "/config.yaml"}
@@ -110,16 +115,20 @@ func init_config(flag flagStruct) {
 			log.Fatal("ShareBaseLink格式错误,请检查是否以http://或https://开头")
 		}
 
-		app.Basic.isPublicServer = app.Basic.PublicServer == "true" || app.Basic.PublicServer == "TRUE" || app.Basic.PublicServer == "1"
+		app.Basic.IsPublicServer = app.Basic.PublicServer == "true" || app.Basic.PublicServer == "TRUE" || app.Basic.PublicServer == "1"
 
 		log.Infof("共享链接: %s", app.Basic.ShareBaseLink)
 		log.Infof("资源文件保存位置: %s", app.Basic.SavePath)
-		return
+		return app
 	}
 	log.Info("使用默认配置")
+	app.init_env()
+	app.SQL.ImportFilename = flag.db_file
+	app.Basic.Version = version
+	return app
 
 }
-func init_env() {
+func (app *Config) init_env() {
 	var ok bool
 	if v := os.Getenv("SPSS_LISTEN"); v != "" {
 		log.Infof("SPSS_LISTEN=%s", v)
@@ -181,11 +190,11 @@ func init_env() {
 	}
 	if v := os.Getenv("SPSS_PUBLIC_SERVER"); v != "" {
 		if v == "true" || v == "TRUE" || v == "1" {
-			app.Basic.isPublicServer = true
+			app.Basic.IsPublicServer = true
 		}
 	}
 
-	if app.Basic.isPublicServer {
+	if app.Basic.IsPublicServer {
 		log.Info("公共服务器模式（不支持首页功能）")
 	} else {
 		log.Info("运行个人服务器模式（支持首页功能）")

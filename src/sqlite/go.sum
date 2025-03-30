@@ -1,0 +1,4 @@
+github.com/mattn/go-sqlite3 v1.14.24 h1:tpSp2G2KyMnnQu99ngJ47EIkWVmliIizyZBfPrBWDRM=
+github.com/mattn/go-sqlite3 v1.14.24/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
+github.com/tengfei-xy/go-log v0.2.8 h1:UpjDXNQeRJYLoXSLA1bI7t2Zfn6f1NzU8igj3QtoQ5o=
+github.com/tengfei-xy/go-log v0.2.8/go.mod h1:WUFar5Siw3S2umNtSxDyeykvgULNqHxsEp2jCnBXj1k=

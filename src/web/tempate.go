@@ -1,4 +1,4 @@
-package main
+package web
 
 const tempate_html = `
 <!DOCTYPE html>

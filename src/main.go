@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"sqlite"
+	"sys"
+	"web"
 
 	_ "github.com/mattn/go-sqlite3"
 )
-
-var app appConfig
 
 const version string = "2.4.4"
 
@@ -26,9 +27,7 @@ func prompt() {
 }
 func main() {
 	prompt()
-	f := init_flag()
-	init_config(f)
-	init_env()
-	init_db(f)
-	init_web()
+	app := sys.InitConfig(version)
+	sqlite.Init(app.SQL.ImportFilename, app.SYSFilename)
+	web.Init(&app)
 }

@@ -1,14 +1,15 @@
-package main
+package web
 
 import (
 	"net/http"
+	db "sqlite"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 )
 
 func dbTableGETRequest(c *gin.Context) {
-	r, err := dbTableGET()
+	r, err := db.Get()
 	if err != nil {
 		internalSystem(c)
 	}
@@ -16,7 +17,7 @@ func dbTableGETRequest(c *gin.Context) {
 }
 
 func dbTableDeleteRequest(c *gin.Context) {
-	err := dbTableDelete()
+	err := db.Delete()
 	if err != nil {
 		internalSystem(c)
 		return
@@ -41,12 +42,12 @@ func dbTablePUTRequest(c *gin.Context) {
 		return
 	}
 
-	if err := dbReset("upload.sql"); err != nil {
+	if err := db.Reset("upload.sql"); err != nil {
 		internalSystem(c)
 		return
 	}
 
-	r, err := dbTableGET()
+	r, err := db.Get()
 	if err != nil {
 		internalSystem(c)
 		return

@@ -1,8 +1,10 @@
-package main
+package web
 
 import (
 	"database/sql"
 	"net/http"
+	"sqlite"
+	"sys"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tengfei-xy/go-log"
@@ -19,9 +21,9 @@ func (ak accessKeyData) startup() string {
 	log.Infof("启动访问密码")
 	log.Infof("Appid:%s", ak.Appid)
 	log.Infof("Docid:%s", ak.Docid)
-	
+
 	if ak.AccessKey == "" {
-		ak.AccessKey = createRand(4)
+		ak.AccessKey = sys.RandString(4)
 		log.Infof("AccessKey:%s (系统指定)", ak.AccessKey)
 	} else {
 		log.Infof("AccessKey:%s (用户指定)", ak.AccessKey)
@@ -30,7 +32,7 @@ func (ak accessKeyData) startup() string {
 
 	var res resStruct
 
-	_, err := app.db.Exec("update share set access_key=?,access_key_enable=1 where appid=? and docid=?", ak.AccessKey, ak.Appid, ak.Docid)
+	_, err := sqlite.DB.Exec("update share set access_key=?,access_key_enable=1 where appid=? and docid=?", ak.AccessKey, ak.Appid, ak.Docid)
 	if err != nil {
 		log.Error(err)
 		return res.setErrSystem().toString()
@@ -46,7 +48,7 @@ func (ak accessKeyData) close() string {
 
 	var res resStruct
 
-	_, err := app.db.Exec("update share set access_key_enable=0 where appid=? and docid=?", ak.Appid, ak.Docid)
+	_, err := sqlite.DB.Exec("update share set access_key_enable=0 where appid=? and docid=?", ak.Appid, ak.Docid)
 	if err != nil {
 		log.Error(err)
 		return res.setErrSystem().toString()
@@ -55,9 +57,7 @@ func (ak accessKeyData) close() string {
 }
 
 func AccessKeyPOSTRequest(c *gin.Context) {
-    
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	
+
 	var res resStruct
 
 	var data accessKeyData
@@ -93,15 +93,13 @@ func AccessKeyGetRequest(c *gin.Context) {
 	}
 
 	res := getaccesskey{
-		Err: ERR_CODE_PARAM,
-		Msg: ERR_MSG_PARAM,
+		Err: sys.ERR_CODE_PARAM,
+		Msg: sys.ERR_MSG_PARAM,
 		Data: Data{
 			AccessKey:       "",
 			AccessKeyEnable: false,
 		},
 	}
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-
 	log.Info("-----------------")
 	log.Infof("获取访问密码")
 
@@ -117,11 +115,11 @@ func AccessKeyGetRequest(c *gin.Context) {
 	var AccessKey string
 	var AccessKeyEnable int
 
-	if err := app.db.QueryRow(`select access_key,access_key_enable from share where appid=? and docid=? `, Appid, Docid).Scan(&AccessKey, &AccessKeyEnable); err != nil {
+	if err := sqlite.DB.QueryRow(`select access_key,access_key_enable from share where appid=? and docid=? `, Appid, Docid).Scan(&AccessKey, &AccessKeyEnable); err != nil {
 		if err == sql.ErrNoRows {
 			log.Warn("没有记录")
-			res.Err = ERR_CODE_NO_KEY
-			res.Msg = ERR_MSG_NO_KEY
+			res.Err = sys.ERR_CODE_NO_KEY
+			res.Msg = sys.ERR_MSG_NO_KEY
 			c.JSON(http.StatusOK, res)
 			return
 		}
@@ -129,8 +127,8 @@ func AccessKeyGetRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	res.Err = ERR_CODE_OK
-	res.Msg = ERR_MSG_OK
+	res.Err = sys.ERR_CODE_OK
+	res.Msg = sys.ERR_MSG_OK
 	res.Data.AccessKey = AccessKey
 
 	if AccessKeyEnable == 0 {

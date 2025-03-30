@@ -1,17 +1,19 @@
-package main
+package web
 
 import (
 	"database/sql"
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"sqlite"
+	"sys"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	log "github.com/tengfei-xy/go-log"
 )
 
-func init_web() {
+func Init(app *sys.Config) {
 	gin.SetMode(gin.ReleaseMode)
 	g := gin.Default()
 
@@ -19,12 +21,12 @@ func init_web() {
 	if app.APIEnable {
 		if app.SQL.Username != "" {
 			log.Infof("启动API的DB接口，启动接口密码保护")
-			authorized := g.Group("/api/db", gin.BasicAuth(gin.Accounts{
+			a := g.Group("/api/db", gin.BasicAuth(gin.Accounts{
 				app.Username: app.Password,
 			}))
-			authorized.GET("/table", dbTableGETRequest)
-			authorized.DELETE("/table", dbTableDeleteRequest)
-			authorized.PUT("/table", dbTablePUTRequest)
+			a.GET("/table", dbTableGETRequest)
+			a.DELETE("/table", dbTableDeleteRequest)
+			a.PUT("/table", dbTablePUTRequest)
 			// authorized.GET("/record", dbRecoreGETRequest)
 		} else {
 			log.Infof("启动API的DB接口，关闭接口密码保护")
@@ -36,7 +38,7 @@ func init_web() {
 		log.Infof("关闭API的DB接口")
 	}
 	g.Use(cors())
-
+	g.Use(env(app))
 	g.POST("/api/v2/link", v2PostLinkRequest)
 	g.POST("/api/v2/home_page", v2PostHomePageRequest)
 	g.DELETE("/api/v2/home_page", v2DeleteHomePageRequest)
@@ -67,8 +69,17 @@ func init_web() {
 			log.Fatal(err)
 		}
 	}
-}
 
+}
+func env(app *sys.Config) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("ShareBaseLink", app.Basic.ShareBaseLink)
+		c.Set("version", app.Basic.Version)
+		c.Set("IsPublicServer", app.Basic.IsPublicServer)
+		c.Set("SavePath", app.Basic.SavePath)
+		c.Set("FileMaxMB", app.Web.FileMaxMB)
+	}
+}
 func cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
@@ -97,11 +108,7 @@ func linkRequest(c *gin.Context) {
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", id)
 
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
-	row := app.db.QueryRow(`select appid,docid,status from share where link=?`, id)
+	row := sqlite.DB.QueryRow(`select appid,docid,status from share where link=?`, id)
 	var appid, docid string
 	var status int
 
@@ -117,33 +124,31 @@ func linkRequest(c *gin.Context) {
 	}
 
 	// 如果数据库中设置了禁止访问
-	if status == STATUS_LINK_DISABLE {
+	if status == sys.STATUS_LINK_DISABLE {
 		noShare(c)
 		return
 	}
 
 	// 访问 + 1
-	_, err := app.db.Exec(`update share set count=count+1 where link=?`, id)
+	_, err := sqlite.DB.Exec(`update share set count=count+1 where link=?`, id)
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)
 		return
 	}
-
-	new_url := fmt.Sprintf("%s/html/%s/%s/index.htm", app.Basic.ShareBaseLink, appid, docid)
+	sbl := c.MustGet("ShareBaseLink")
+	new_url := fmt.Sprintf("%s/html/%s/%s/index.htm", sbl, appid, docid)
 	//重定向
 	log.Infof("重定向: %s", new_url)
 	c.Redirect(http.StatusMovedPermanently, new_url)
 }
 func rootRequest(c *gin.Context) {
+	sbl := c.MustGet("ShareBaseLink")
+
 	// 从数据库中读取home_apge
 	var res resStruct
 
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
-	row := app.db.QueryRow(`select appid,docid,status,link from share where home_page=1`)
+	row := sqlite.DB.QueryRow(`select appid,docid,status,link from share where home_page=1`)
 	var appid, docid, link string
 	var status int
 	if err := row.Scan(&appid, &docid, &status, &link); err != nil {
@@ -158,20 +163,20 @@ func rootRequest(c *gin.Context) {
 	}
 
 	// 如果数据库中设置了禁止访问
-	if status == STATUS_LINK_DISABLE {
+	if status == sys.STATUS_LINK_DISABLE {
 		noShare(c)
 		return
 	}
 
 	// 访问 + 1
-	_, err := app.db.Exec(`update share set count=count+1 where link=?`, link)
+	_, err := sqlite.DB.Exec(`update share set count=count+1 where link=?`, link)
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)
 		return
 	}
 
-	new_url := fmt.Sprintf("%s/html/%s/%s/index.htm", app.Basic.ShareBaseLink, appid, docid)
+	new_url := fmt.Sprintf("%s/html/%s/%s/index.htm", sbl, appid, docid)
 	//重定向
 	log.Infof("重定向: %s", new_url)
 	c.Redirect(http.StatusMovedPermanently, new_url)
@@ -179,24 +184,26 @@ func rootRequest(c *gin.Context) {
 }
 
 func infoRequest(c *gin.Context) {
+	isps := c.MustGet("IsPublicServer").(bool)
+	v := c.MustGet("version").(string)
+
 	type Resquest struct {
 		Version        string `json:"version"`
 		IsPublicServer bool   `json:"is_public_server"`
 	}
 	var res Resquest
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-
-	res.IsPublicServer = app.Basic.isPublicServer
-	res.Version = version
+	res.IsPublicServer = isps
+	res.Version = v
 	c.JSON(http.StatusOK, msgOK(res))
 }
 func htmlRequest(c *gin.Context) {
+	sp := c.MustGet("SavePath").(string)
 
 	appid := c.Params.ByName("appid")
 	docid := c.Params.ByName("docid")
 	param_filename := c.Params.ByName("filepath")
-	filename := filepath.Join(app.SavePath, appid, docid, param_filename)
+	filename := filepath.Join(sp, appid, docid, param_filename)
 	if param_filename != "/index.htm" {
 		c.File(filename)
 		return
@@ -205,7 +212,7 @@ func htmlRequest(c *gin.Context) {
 	var access_key string
 	var access_key_enable int
 
-	err := app.db.QueryRow(`select access_key,access_key_enable from share where appid=? and docid=?`, appid, docid).Scan(&access_key, &access_key_enable)
+	err := sqlite.DB.QueryRow(`select access_key,access_key_enable from share where appid=? and docid=?`, appid, docid).Scan(&access_key, &access_key_enable)
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)

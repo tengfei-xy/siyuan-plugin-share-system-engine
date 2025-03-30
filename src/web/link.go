@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"database/sql"
@@ -8,8 +8,10 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sqlite"
 	"strconv"
 	"strings"
+	"sys"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/gin-gonic/gin"
@@ -49,15 +51,12 @@ type uploadArgsReq struct {
 }
 
 func v2PostLinkRequest(c *gin.Context) {
+	sbl := c.MustGet("ShareBaseLink").(string)
 	log.Info("-----------------")
 	log.Info("获取链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
 	type resdata struct {
 		Link     string `json:"link"`
 		HomePage bool   `json:"home_page"`
@@ -82,7 +81,7 @@ func v2PostLinkRequest(c *gin.Context) {
 	log.Infof("插件版本: %v", data.PluginVersion)
 
 	// 处理请求
-	row := app.db.QueryRow(`select link,home_page from share where appid=? and docid=? `, data.Appid, data.Docid)
+	row := sqlite.DB.QueryRow(`select link,home_page from share where appid=? and docid=? `, data.Appid, data.Docid)
 	var link string
 	var home_page int
 	if err := row.Scan(&link, &home_page); err != nil {
@@ -97,7 +96,7 @@ func v2PostLinkRequest(c *gin.Context) {
 	}
 	log.Infof("首页: %v", home_page == 1)
 	log.Infof("链接: %s", link)
-	var url string = app.ShareBaseLink
+	var url string = sbl
 	if home_page != 1 {
 		url += "/" + link
 	}
@@ -109,15 +108,12 @@ func v2PostLinkRequest(c *gin.Context) {
 
 // 以下是旧版的函数
 func uploadFileRequest(c *gin.Context) {
+	sp := c.MustGet("SavePath").(string)
+
 	log.Info("-----------------")
 	log.Info("上传文件")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
 
 	var res resStruct
 	appid := c.Query("appid")
@@ -140,7 +136,7 @@ func uploadFileRequest(c *gin.Context) {
 	}
 
 	// 创建资源文件夹
-	f, err := mkdir_all(appid, docid)
+	f, err := sys.MkdirAll(sp, appid, docid)
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)
@@ -164,7 +160,7 @@ func uploadFileRequest(c *gin.Context) {
 	}
 
 	// 解压文件
-	if err := unzip(f, zip_file); err != nil {
+	if err := sys.Unzip(f, zip_file); err != nil {
 		internalSystem(c)
 		return
 	}
@@ -173,15 +169,12 @@ func uploadFileRequest(c *gin.Context) {
 	c.JSON(http.StatusOK, res.setOK("上传文件成功"))
 }
 func uploadArgsRequest(c *gin.Context) {
+	sp := c.MustGet("SavePath").(string)
+	sbl := c.MustGet("ShareBaseLink").(string)
 	log.Info("-----------------")
 	log.Info("上传参数")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
-
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
 
 	var res resStruct
 	// 获取请求数据
@@ -234,7 +227,7 @@ func uploadArgsRequest(c *gin.Context) {
 
 	// 创建资源文件夹
 	// 返回资源文件夹的路径,作为生成的html文件的存放路径
-	tmp_html, err := mkdir_all(data.Appid, data.Docid)
+	tmp_html, err := sys.MkdirAll(sp, data.Appid, data.Docid)
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)
@@ -293,7 +286,7 @@ func uploadArgsRequest(c *gin.Context) {
 		content = strings.ReplaceAll(content, "{{ .CustomCSS }}", data.CustomCSS)
 	}
 
-	f, err := os.OpenFile(filepath.Join(tmp_html, "index.htm"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, get_file_permission())
+	f, err := os.OpenFile(filepath.Join(tmp_html, "index.htm"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, sys.GetFilePermission())
 	if err != nil {
 		log.Error(err)
 		internalSystem(c)
@@ -308,7 +301,7 @@ func uploadArgsRequest(c *gin.Context) {
 
 	if data.HomePage {
 		// 设置为首页
-		_, err = app.db.Exec("update share set home_page=0 where appid=?", data.Appid)
+		_, err = sqlite.DB.Exec("update share set home_page=0 where appid=?", data.Appid)
 		if err != nil {
 			log.Error(err)
 			internalSystem(c)
@@ -316,15 +309,15 @@ func uploadArgsRequest(c *gin.Context) {
 		}
 	}
 	// 根据appid和docid查看链接是否存在
-	row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
+	row := sqlite.DB.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
 	var link string
 
 	if err := row.Scan(&link); err != nil {
 		// 如果不存在就插入
 		if err == sql.ErrNoRows {
-			link := createRand(RAND_URL_LENGTH)
-			full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
-			_, err := app.db.Exec("INSERT INTO share(appid,docid,title,link,access_key,access_key_enable,home_page) VALUES(?,?,?,?,?,?,?)  ", data.Appid, data.Docid, data.Title, link, data.AccessKey, access_key_enable, home_page_enable)
+			link := sys.RandString(sys.RAND_URL_LENGTH)
+			full_link := fmt.Sprintf("%s/%s", sbl, link)
+			_, err := sqlite.DB.Exec("INSERT INTO share(appid,docid,title,link,access_key,access_key_enable,home_page) VALUES(?,?,?,?,?,?,?)  ", data.Appid, data.Docid, data.Title, link, data.AccessKey, access_key_enable, home_page_enable)
 			if err != nil {
 				log.Error(err)
 				internalSystem(c)
@@ -344,9 +337,9 @@ func uploadArgsRequest(c *gin.Context) {
 	// 链接存在时，更新链接
 	if data.ExistLinkCreate {
 		// 重新更新链接
-		link := createRand(RAND_URL_LENGTH)
-		full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
-		_, err = app.db.Exec("update share set link=? where appid=? and docid=? and access_key=? and access_key_enable=? ans home_page=?", link, data.Appid, data.Docid, data.AccessKey, access_key_enable, home_page_enable)
+		link := sys.RandString(sys.RAND_URL_LENGTH)
+		full_link := fmt.Sprintf("%s/%s", sbl, link)
+		_, err = sqlite.DB.Exec("update share set link=? where appid=? and docid=? and access_key=? and access_key_enable=? ans home_page=?", link, data.Appid, data.Docid, data.AccessKey, access_key_enable, home_page_enable)
 		if err != nil {
 			log.Error(err)
 			internalSystem(c)
@@ -358,7 +351,7 @@ func uploadArgsRequest(c *gin.Context) {
 		return
 	}
 
-	full_link := fmt.Sprintf("%s/%s", app.Basic.ShareBaseLink, link)
+	full_link := fmt.Sprintf("%s/%s", sbl, link)
 
 	log.Infof("提取参数成功")
 	log.Infof("当前分享链接: %s", full_link)
@@ -389,15 +382,12 @@ func setTitleImageHeigt(content *string, height int) {
 
 }
 func deleteLinkRequest(c *gin.Context) {
+	sp := c.MustGet("SavePath").(string)
 	log.Info("-----------------")
 	log.Info("删除链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
 	var res resStruct
 	// 从body中读取数据
 	// 获取post请求的数据
@@ -419,13 +409,13 @@ func deleteLinkRequest(c *gin.Context) {
 	log.Infof("docid: %s", data.Docid)
 	log.Infof("插件版本: %v", data.PluginVersion)
 
-	_, err = app.db.Exec(`delete from share where appid=? and docid=?`, data.Appid, data.Docid)
+	_, err = sqlite.DB.Exec(`delete from share where appid=? and docid=?`, data.Appid, data.Docid)
 	if err != nil {
 		log.Errorf("错误: %v", err)
 		internalSystem(c)
 		return
 	}
-	if err := rmdir_all(data.Appid, data.Docid); err != nil {
+	if err := sys.RmdirAll(sp, data.Appid, data.Docid); err != nil {
 		log.Errorf("错误: %v", err)
 		internalSystem(c)
 		return
@@ -436,15 +426,13 @@ func deleteLinkRequest(c *gin.Context) {
 }
 
 func getLinkRequest(c *gin.Context) {
+	sbl := c.MustGet("ShareBaseLink").(string)
+
 	log.Info("-----------------")
 	log.Info("获取链接")
 	log.Infof("IP: %s", c.ClientIP())
 	log.Infof("链接: %s", c.Request.URL.String())
 
-	cros_status := c.Request.Header.Get("cros-status")
-	if cros_status == "true" {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	}
 	var res resStruct
 
 	// 获取post请求的数据
@@ -467,7 +455,7 @@ func getLinkRequest(c *gin.Context) {
 	log.Infof("插件版本: %v", data.PluginVersion)
 
 	// 处理请求
-	row := app.db.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
+	row := sqlite.DB.QueryRow(`select link from share where appid=? and docid=? `, data.Appid, data.Docid)
 	var link string
 
 	if err := row.Scan(&link); err != nil {
@@ -485,12 +473,12 @@ func getLinkRequest(c *gin.Context) {
 	log.Infof("链接: %s", link)
 
 	// 返回数据
-	c.JSON(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", app.ShareBaseLink, link)))
+	c.JSON(http.StatusOK, res.setOK(fmt.Sprintf("%s/%s", sbl, link)))
 }
 func getLinkAllRequest(c *gin.Context) {
-	var res resStruct
+	sbl := c.MustGet("ShareBaseLink").(string)
 
-	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	var res resStruct
 
 	appid := c.Query("appid")
 	log.Info("-----------------")
@@ -513,7 +501,7 @@ func getLinkAllRequest(c *gin.Context) {
 	}
 
 	var length int
-	if err := app.db.QueryRow("select COUNT(*) from share where appid=?", appid).Scan(&length); err != nil {
+	if err := sqlite.DB.QueryRow("select COUNT(*) from share where appid=?", appid).Scan(&length); err != nil {
 		log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalSystemErr())
 		return
@@ -528,7 +516,7 @@ func getLinkAllRequest(c *gin.Context) {
 
 	d := make([]data, length)
 
-	ret, err := app.db.Query("select docid,title,link,access_key,access_key_enable,home_page from share where appid=?", appid)
+	ret, err := sqlite.DB.Query("select docid,title,link,access_key,access_key_enable,home_page from share where appid=?", appid)
 	if err != nil {
 		log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, msgInternalSystemErr())
@@ -549,8 +537,44 @@ func getLinkAllRequest(c *gin.Context) {
 		}
 		log.Debugf("%s", d[i].DocID)
 
-		d[i].Link = fmt.Sprintf("%s/%s", app.ShareBaseLink, d[i].Link)
+		d[i].Link = fmt.Sprintf("%s/%s", sbl, d[i].Link)
 		i++
 	}
 	c.JSON(http.StatusOK, msgOK(d))
+}
+
+func check_theme_file(dir string) {
+	update_theme_file(dir, "Odyssey")
+	update_theme_file(dir, "Savor")
+
+}
+func update_theme_file(dir string, theme string) error {
+	filename := filepath.Join(dir, fmt.Sprintf("appearance/themes/%s/theme.css", theme))
+	if !tools.FileExist(filename) {
+		return nil
+	}
+
+	log.Infof("修改主题 %s", theme)
+
+	content, err := os.ReadFile(filename)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	s := string(content)
+	s = strings.ReplaceAll(s, fmt.Sprintf("/appearance/themes/%s/", theme), "")
+	os.WriteFile(filename, []byte(s), 0644)
+
+	filename = filepath.Join(dir, fmt.Sprintf("appearance/themes/%s/style/custom/link-icon.css", theme))
+
+	content, err = os.ReadFile(filename)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	s = string(content)
+	s = strings.ReplaceAll(s, fmt.Sprintf("/appearance/themes/%s/", theme), "../../")
+	os.WriteFile(filename, []byte(s), 0644)
+
+	return nil
 }

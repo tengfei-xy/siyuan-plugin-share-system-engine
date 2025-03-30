@@ -1,11 +1,11 @@
-package main
+package sys
 
 import (
 	"math/rand"
 	"time"
 )
 
-func createRand(length int) string {
+func RandString(length int) string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	const pool = "qazwsxedcrfvtgbyhnujmikolpQAZWSXEDCRFVTGBYHNUJMIKOLP1234567890"
 	bytes := make([]byte, length)
