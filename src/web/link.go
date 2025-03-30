@@ -350,8 +350,10 @@ func uploadArgsRequest(c *gin.Context) {
 		c.JSON(http.StatusOK, res.setOK(full_link))
 		return
 	}
-
 	full_link := fmt.Sprintf("%s/%s", sbl, link)
+	if data.HomePage {
+		full_link = sbl
+	}
 
 	log.Infof("提取参数成功")
 	log.Infof("当前分享链接: %s", full_link)
