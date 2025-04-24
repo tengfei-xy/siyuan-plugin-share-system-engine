@@ -49,6 +49,13 @@ func noShare(c *gin.Context) {
 		Data: nil,
 	})
 }
+func unauthorized(c *gin.Context) {
+	c.JSON(http.StatusUnauthorized, resquest{
+		Err:  4,
+		Msg:  "认证失败",
+		Data: nil,
+	})
+}
 
 // 以下是旧版的结构体
 type resStruct struct {

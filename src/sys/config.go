@@ -22,6 +22,7 @@ type Basic struct {
 	SavePath       string `yaml:"savePath"`
 	ShareBaseLink  string `yaml:"shareBaseLink"`
 	PublicServer   string `yaml:"publicServer"`
+	Token          string `yaml:"token,omitempty"`
 	IsPublicServer bool   `yaml:"-"`
 	Version        string `yaml:"-"`
 }
@@ -66,7 +67,6 @@ func (app *Config) is_empty() {
 	if app.SQL.SYSFilename == "" {
 		app.SQL.SYSFilename = "info.db"
 		log.Infof("数据库存储文件使用强制参数:%s", app.SQL.SYSFilename)
-
 	}
 }
 func init_flag() flagStruct {
@@ -115,6 +115,11 @@ func InitConfig(version string) Config {
 			log.Fatal("ShareBaseLink格式错误,请检查是否以http://或https://开头")
 		}
 
+		if app.Basic.Token == "" {
+			log.Info("Token未启动")
+		} else {
+			log.Info("Token已启动")
+		}
 		app.Basic.IsPublicServer = app.Basic.PublicServer == "true" || app.Basic.PublicServer == "TRUE" || app.Basic.PublicServer == "1"
 
 		log.Infof("共享链接: %s", app.Basic.ShareBaseLink)
@@ -195,10 +200,17 @@ func (app *Config) init_env() {
 	}
 
 	if app.Basic.IsPublicServer {
-		log.Info("公共服务器模式（不支持首页功能）")
+		log.Info("运行公共服务器模式（不支持首页功能）")
 	} else {
 		log.Info("运行个人服务器模式（支持首页功能）")
 	}
+	if v := os.Getenv("SPSS_TOKEN"); v != "" {
+		app.Basic.Token = v
+		log.Info("Token已启动")
+	} else {
+		log.Info("Token未启动")
+	}
+
 	app.is_empty()
 }
 func check_url(url string) (string, bool) {

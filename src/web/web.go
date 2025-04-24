@@ -39,6 +39,13 @@ func Init(app *sys.Config) {
 	}
 	g.Use(cors())
 	g.Use(env(app))
+	g.GET("/api/info", infoRequest)
+	g.GET("/:id", linkRequest)
+	g.GET("/", rootRequest)
+	g.GET("/html/:appid/:docid/*filepath", htmlRequest)
+
+	// 以下接口需要token
+	g.Use(setToken())
 	g.POST("/api/v2/link", v2PostLinkRequest)
 	g.POST("/api/v2/home_page", v2PostHomePageRequest)
 	g.DELETE("/api/v2/home_page", v2DeleteHomePageRequest)
@@ -47,12 +54,8 @@ func Init(app *sys.Config) {
 	g.POST("/api/getlink", getLinkRequest)
 	g.GET("/api/getlinkall", getLinkAllRequest)
 	g.POST("/api/deletelink", deleteLinkRequest)
-	g.GET("/api/info", infoRequest)
 	g.POST("/api/key", AccessKeyPOSTRequest)
 	g.GET("/api/key", AccessKeyGetRequest)
-	g.GET("/html/:appid/:docid/*filepath", htmlRequest)
-	g.GET("/:id", linkRequest)
-	g.GET("/", rootRequest)
 
 	g.MaxMultipartMemory = app.Web.FileMaxMB << 20 // 100 MiB
 
@@ -70,34 +73,6 @@ func Init(app *sys.Config) {
 		}
 	}
 
-}
-func env(app *sys.Config) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Set("ShareBaseLink", app.Basic.ShareBaseLink)
-		c.Set("version", app.Basic.Version)
-		c.Set("IsPublicServer", app.Basic.IsPublicServer)
-		c.Set("SavePath", app.Basic.SavePath)
-		c.Set("FileMaxMB", app.Web.FileMaxMB)
-	}
-}
-func cors() gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "false")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Cookie, cros-status")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-
-		if c.Request.Method == "OPTIONS" {
-			log.Info("-----------------")
-			log.Info("预检")
-			log.Infof("原始: %s", c.Request.Header.Get("origin"))
-			c.Status(http.StatusNoContent)
-			return
-		}
-
-		c.Next()
-	}
 }
 
 func linkRequest(c *gin.Context) {
@@ -182,19 +157,22 @@ func rootRequest(c *gin.Context) {
 	c.Redirect(http.StatusMovedPermanently, new_url)
 
 }
-
 func infoRequest(c *gin.Context) {
 	isps := c.MustGet("IsPublicServer").(bool)
 	v := c.MustGet("version").(string)
-
+	token := c.MustGet("Token").(string)
 	type Resquest struct {
 		Version        string `json:"version"`
 		IsPublicServer bool   `json:"is_public_server"`
+		EnableToken    bool   `json:"enable_token"`
 	}
 	var res Resquest
 
 	res.IsPublicServer = isps
 	res.Version = v
+	if token != "" {
+		res.EnableToken = true
+	}
 	c.JSON(http.StatusOK, msgOK(res))
 }
 func htmlRequest(c *gin.Context) {

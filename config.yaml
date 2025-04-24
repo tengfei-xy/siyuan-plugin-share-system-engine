@@ -17,11 +17,19 @@ basic:
   # 在个人模式下，可以使用首页功能
   # 其他功能均相同，，默认参数为false，即为个人模式
   publicServer: false
+
+  # 设置token后，仅拥有token的用户才能访问您的服务器，而不是任何人。
+  # 如果您的服务器作为公共使用，但想要只给特定用户使用或其他情况，请设置token
+  # 如果你的服务器作为个人使用，服务器在局域网出于安全考虑，建议设置token
+  # 如果token的值为空，则不启用token
+  # 当sslEnable为false时，插件在分享时，将使用明文传输token（此时是暴露的，不安全的）。
+  # SPSS_TOKEN
+  token: ""
+
 web:
   # 从插件上传数据文件的大小限制，单位MB
   # SPSS_WEB_FILE_MAX
   fileMaxMB: 100
-
 
   # 启动https服务器
   # SPSS_WEB_SSL
