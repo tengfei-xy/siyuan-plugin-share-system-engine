@@ -72,7 +72,7 @@
   -e SPSS_SHARE_LINK=http://127.0.0.1:25934 \
   -e SPSS_WEB_FILE_MAX=100 \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.4.5
+  tengfeixy/spss_engine:2.4.6
   ```
 
   https访问 / 启动API访问密码保护
@@ -89,7 +89,7 @@
   -e SPSS_DB_API=true \
   -e SPSS_DB_AUTH=username:password \
   --name=spss_engine \
-  tengfeixy/spss_engine:2.4.5
+  tengfeixy/spss_engine:2.4.6
   ```
 
 - 本地构建镜像

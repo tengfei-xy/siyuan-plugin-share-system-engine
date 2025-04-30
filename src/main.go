@@ -9,7 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const version string = "2.4.5"
+const version string = "2.4.6"
 
 func prompt() {
 	fmt.Printf(`
