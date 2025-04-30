@@ -39,6 +39,10 @@ func cors() gin.HandlerFunc {
 }
 func setToken() gin.HandlerFunc {
 	return func(c *gin.Context) {
+	    if c.Request.Method == "OPTIONS" {
+	        c.Next()
+			return
+	    }
 		token := c.MustGet("Token")
 		if token == "" {
 			c.Next()
