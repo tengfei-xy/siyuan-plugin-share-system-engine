@@ -37,7 +37,7 @@ web:
 
   # https的证书文件路径
   # SPSS_WEB_SSL_CERT
-  sslCert: "./"
+  sslCERT: "./"
   # https的证书文件路径
   # SPSS_WEB_SSL_KEY
   sslKEY: "./"
